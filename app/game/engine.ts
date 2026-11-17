@@ -270,7 +270,10 @@ function tick(state: GameState, dt: number, rand: number[]): GameState {
 function input(state: GameState, raw: string): GameState {
   // In word mode a space confirms the word, since words never contain spaces.
   if (state.mode === "words" && /\s/.test(raw)) {
-    return submit({ ...state, typed: normalize(raw.replace(/\s+/g, "")) });
+    const word = normalize(raw.replace(/\s+/g, ""));
+    const exact = lowestExact(state.items, word);
+    if (exact) return clearItem(state, exact);
+    return word ? mistake(state) : state;
   }
   const value = normalize(raw);
   if (value === state.typed) return state;
@@ -290,7 +293,7 @@ function submit(state: GameState): GameState {
   if (!text) return state;
   const exact = lowestExact(state.items, text);
   if (exact) return clearItem(state, exact);
-  return { ...state, mistakes: state.mistakes + 1, errorTick: state.errorTick + 1 };
+  return mistake(state);
 }
 
 export function reducer(state: GameState, action: Action): GameState {
