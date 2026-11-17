@@ -1,0 +1,96 @@
+name: CI/CD
+
+# Lint and type-check every push and pull request, then build the Docker image.
+# Pushes to the default branch and v* tags publish the image to Docker Hub as
+# <DOCKERHUB_USERNAME>/keep-me-away-from-ielts.
+#
+# To enable publishing:
+#   1. Replace the placeholder below with your Docker Hub user name
+#      (or set a repository variable named DOCKERHUB_USERNAME instead).
+#   2. Add a repository secret DOCKERHUB_TOKEN: a Docker Hub access token with
+#      Read & Write scope (Settings > Secrets and variables > Actions).
+# Until both are set, the image is still built but not pushed.
+
+on:
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE_NAME: keep-me-away-from-ielts
+  # TODO: replace your-dockerhub-username with your Docker Hub user name.
+  DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME || 'your-dockerhub-username' }}
+
+jobs:
+  check:
+    name: Lint and type-check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npx next typegen && npx tsc --noEmit
+
+  docker:
+    name: Build and push image
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Decide whether to push
+        id: hub
+        env:
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "push=false" >> "$GITHUB_OUTPUT"
+          elif [ "$DOCKERHUB_USERNAME" = "your-dockerhub-username" ] || [ -z "$DOCKERHUB_TOKEN" ]; then
+            echo "::warning::Docker Hub is not set up yet (username placeholder or missing DOCKERHUB_TOKEN secret). Building without pushing."
+            echo "push=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "push=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: steps.hub.outputs.push == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Image tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: docker.io/${{ env.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=sha,format=short
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ steps.hub.outputs.push == 'true' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
