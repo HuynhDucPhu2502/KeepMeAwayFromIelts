@@ -831,3 +831,232 @@ kbd {
     opacity: 0;
   }
 }
+
+/* ---------------------------------------------------------------- */
+/* Party mode                                                        */
+/* ---------------------------------------------------------------- */
+
+/* Phone: the root follows the visual viewport (set from JS), so the typing box stays above the keyboard. */
+.party-phone {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+}
+
+.party-phone .field {
+  container-type: size;
+}
+
+.party-hud {
+  min-height: 48px;
+}
+
+.party-hud-note {
+  margin-left: auto;
+}
+
+.party-notice {
+  max-width: 380px;
+}
+
+.party-notice h2 {
+  line-height: 1.25;
+}
+
+.party-countdown {
+  position: absolute;
+  inset: 0 0 72px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  pointer-events: none;
+  text-align: center;
+  z-index: 6;
+  background: rgba(7, 11, 26, 0.45);
+}
+
+.party-countdown strong {
+  font-family: var(--font-mono-ui), monospace;
+  font-size: 96px;
+  line-height: 1;
+  color: var(--accent);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
+}
+
+.party-countdown-label {
+  font-size: 14px;
+  color: var(--muted);
+  padding: 0 16px;
+}
+
+.party-join {
+  gap: 14px;
+}
+
+.party-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.party-field > span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.party-code-input {
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  font-weight: 700;
+}
+
+.party-error {
+  font-size: 14px;
+  color: var(--danger);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.party-names {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.party-names li {
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 14px;
+}
+
+.party-names li.me {
+  border-color: var(--target);
+  color: var(--target);
+}
+
+.party-rank {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.party-live {
+  animation: party-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes party-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.band-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  border-radius: 12px;
+  background: rgba(251, 191, 36, 0.08);
+  text-align: center;
+}
+
+.band-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.band-value {
+  font-family: var(--font-mono-ui), monospace;
+  font-size: 34px;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.band-card p {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.party-podium {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.party-podium li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.party-podium li.me {
+  border-color: var(--target);
+}
+
+.podium-name {
+  flex: 1;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.podium-score {
+  font-family: var(--font-mono-ui), monospace;
+  color: var(--muted);
+}
+
+/* Short lanes (phone keyboard open): smaller words and boss, no meanings under falling words. */
+@container (max-height: 380px) {
+  .party-phone .word-meaning {
+    display: none;
+  }
+  .party-phone .word {
+    padding: 2px 8px;
+  }
+  .party-phone .boss {
+    top: 2px;
+    gap: 4px;
+  }
+  .party-phone .boss-head {
+    padding: 4px 10px;
+    gap: 8px;
+  }
+  .party-phone .boss-emoji {
+    font-size: 24px;
+  }
+  .party-phone .boss-info {
+    min-width: 110px;
+  }
+  .party-phone .banner strong {
+    font-size: 28px;
+  }
+  .party-countdown strong {
+    font-size: 64px;
+  }
+  .party-phone .overlay {
+    align-items: flex-start;
+  }
+}
