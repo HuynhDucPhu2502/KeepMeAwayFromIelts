@@ -3,15 +3,15 @@
 import type { Auth } from "firebase/auth";
 import type { Database } from "firebase/database";
 
-// TODO: real config — paste the web app config from Firebase Console
-// (Project settings → General → Your apps → SDK setup and configuration → Config).
-// It is not a secret, so it is committed here rather than read from NEXT_PUBLIC_* env vars.
+// Web app config of the Firebase project "kmafi-party" (Project settings → General → Your apps).
+// It is not a secret: access is controlled by database.rules.json, so it is committed here rather
+// than read from NEXT_PUBLIC_* env vars (which would be frozen into the image at build time).
 export const firebaseConfig = {
-  apiKey: "TODO",
-  authDomain: "TODO",
-  databaseURL: "TODO",
-  projectId: "TODO",
-  appId: "TODO",
+  apiKey: "AIzaSyDFF-8nnJ9VqNnN2LcwzAsfoLoizmxZa3g",
+  authDomain: "kmafi-party.firebaseapp.com",
+  databaseURL: "https://kmafi-party-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "kmafi-party",
+  appId: "1:429051566626:web:831601445b656ef93e087b",
 };
 
 export const firebaseConfigured = !Object.values(firebaseConfig).includes("TODO");

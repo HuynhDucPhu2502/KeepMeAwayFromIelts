@@ -336,6 +336,7 @@ export default function PartyPlayer() {
   const shake = engine.errorTick === 0 ? "" : engine.errorTick % 2 ? "shake-a" : "shake-b";
   const total = room ? participants(room).length : 0;
   const alive = room ? aliveCount(room, now) : 0;
+  const myRank = room && session ? rankPlayers(room, now).indexOf(session.uid) + 1 : 0;
 
   let overlay: ReactNode = null;
   if (availability !== "on") overlay = <AvailabilityNotice availability={availability} />;
@@ -406,6 +407,10 @@ export default function PartyPlayer() {
                   </span>
                 ))}
               </dd>
+            </div>
+            <div>
+              <dt>Hạng</dt>
+              <dd className={myRank === 1 ? "hot" : undefined}>{myRank > 0 ? `#${myRank}` : "–"}</dd>
             </div>
             <div>
               <dt>Còn</dt>
