@@ -426,3 +426,450 @@
     font-size: 15px;
   }
 }
+
+
+/* ---------------------------------------------------------------- */
+/* Hub Custom Deck Banner                                           */
+/* ---------------------------------------------------------------- */
+.hub-deck-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 14px;
+  border: 2px dashed #fdba74;
+  border-radius: 14px;
+  background: #fff7ed;
+  color: var(--text);
+  text-decoration: none;
+  transition: background 0.14s, border-color 0.14s, transform 0.1s;
+}
+
+.hub-deck-banner:hover {
+  background: #ffedd5;
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.hub-deck-banner strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--accent-dark);
+}
+
+.hub-deck-banner span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---------------------------------------------------------------- */
+/* Custom Word Deck Builder (/deck)                                 */
+/* ---------------------------------------------------------------- */
+.deck-card {
+  max-width: 920px;
+  gap: 18px;
+}
+
+.deck-title {
+  margin-top: 6px;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.deck-presets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.deck-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.deck-preset-btn {
+  padding: 6px 12px;
+  border: 1.5px solid var(--line);
+  border-bottom-width: 2.5px;
+  border-radius: 999px;
+  background: #faf6ee;
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.deck-preset-btn:hover {
+  background: #ffffff;
+  border-color: var(--target);
+}
+
+.deck-preset-btn.clear {
+  color: var(--danger);
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.deck-editor-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.deck-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.deck-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.deck-input,
+.deck-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: #fcfaf5;
+  color: var(--text);
+  font: inherit;
+  font-weight: 500;
+}
+
+.deck-textarea {
+  font-family: var(--font-mono-ui), ui-monospace, monospace;
+  font-size: 13.5px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.deck-input:focus,
+.deck-textarea:focus {
+  outline: none;
+  border-color: var(--target);
+  background: #ffffff;
+}
+
+.deck-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  background: #faf6ee;
+}
+
+.deck-preview-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.deck-chip-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.deck-chip {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  font-size: 13px;
+}
+
+.deck-chip strong {
+  font-family: var(--font-mono-ui), ui-monospace, monospace;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.deck-chip span {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+}
+
+.deck-share-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+}
+
+.deck-share-btn {
+  width: 100%;
+}
+
+.deck-launch {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.deck-launch-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.deck-launch-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 2px solid var(--line);
+  border-bottom-width: 3px;
+  border-radius: 14px;
+  background: #ffffff;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s, transform 0.08s;
+}
+
+.deck-launch-btn:hover:not(:disabled) {
+  border-color: var(--target);
+  background: #f0f9ff;
+  transform: translateY(-1px);
+}
+
+.deck-launch-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.deck-launch-btn strong {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 800;
+}
+
+.deck-launch-btn span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---------------------------------------------------------------- */
+/* Speaking Part 2 Live Microphone Bar & Transcript                 */
+/* ---------------------------------------------------------------- */
+.mic-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mic-btn {
+  flex: 1;
+  min-width: 210px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.mic-btn.recording {
+  background: #ef4444;
+  border-color: #b91c1c;
+  color: #ffffff;
+}
+
+.mic-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.5;
+}
+
+.mic-dot.active {
+  background: #ffffff;
+  opacity: 1;
+  animation: micPulse 1s ease-in-out infinite;
+}
+
+@keyframes micPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.45);
+    opacity: 0.55;
+  }
+}
+
+.mic-accent {
+  width: 132px;
+  flex-shrink: 0;
+}
+
+.mic-error {
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.mic-transcript-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1.5px solid #bae6fd;
+  border-radius: 12px;
+  background: #f0f9ff;
+}
+
+.mic-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.mic-transcript-text {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+  max-height: 96px;
+  overflow-y: auto;
+}
+
+.mic-interim {
+  color: #0369a1;
+  font-style: italic;
+}
+
+/* ---------------------------------------------------------------- */
+/* Below-the-fold SSR SEO Overview & FAQ Section                    */
+/* ---------------------------------------------------------------- */
+.seo-section {
+  border-top: 2px solid var(--line);
+  background: #faf6ee;
+  padding: 44px 20px 64px;
+}
+
+.seo-container {
+  max-width: 980px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.seo-intro h2,
+.seo-faq h2 {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.seo-intro p {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+
+.seo-links-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.seo-link-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--line);
+  border-bottom-width: 3px;
+  border-radius: 14px;
+  background: #ffffff;
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.14s, transform 0.08s;
+}
+
+.seo-link-card:hover {
+  border-color: var(--target);
+  transform: translateY(-1px);
+}
+
+.seo-link-card h3 {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.seo-link-card p {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.seo-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.seo-faq-item {
+  padding: 13px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.seo-faq-item summary {
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.seo-faq-item p {
+  margin-top: 8px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+@media (max-width: 780px) {
+  .deck-editor-grid,
+  .deck-launch-grid,
+  .seo-links-grid {
+    grid-template-columns: 1fr;
+  }
+}

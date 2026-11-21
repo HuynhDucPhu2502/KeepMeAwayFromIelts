@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useBestScores } from "@/hooks/useBestScore";
+import { loadCustomDeck, type CustomDeck } from "@/lib/custom-deck";
 import { PHRASES, WORDS } from "@/lib/vocab";
 import {
   BOSS_EVERY,
@@ -49,7 +50,9 @@ export default function TypingGame() {
   const initialDifficulty = parseDifficulty(searchParams.get("difficulty"));
   const initialMeaning = searchParams.get("meaning") !== "0";
   const shouldAutoStart = searchParams.get("autostart") === "1";
+  const useCustomDeckParam = searchParams.get("deck") === "custom";
 
+  const [customDeck] = useState<CustomDeck | null>(() => (useCustomDeckParam ? loadCustomDeck() : null));
   const [state, dispatch] = useReducer(reducer, undefined, () => ({
     ...initialState(),
     mode: initialMode,
@@ -67,9 +70,10 @@ export default function TypingGame() {
   const start = useCallback(
     (m: Mode = mode, d: Difficulty = difficulty) => {
       const b = bestScores[bestKey(m, d)] ?? 0;
-      dispatch({ type: "start", pool: buildPool(m, d, WORDS, PHRASES), best: b, mode: m, difficulty: d });
+      const pool = customDeck && customDeck.entries.length > 0 ? customDeck.entries : buildPool(m, d, WORDS, PHRASES);
+      dispatch({ type: "start", pool, best: b, mode: m, difficulty: d });
     },
-    [mode, difficulty, bestScores],
+    [mode, difficulty, bestScores, customDeck],
   );
 
   // Auto-start when launched from the main Hub with ?autostart=1
@@ -178,7 +182,7 @@ export default function TypingGame() {
           </Link>
           <div className="hud-brand">
             <Image src="/logo.png" alt="Keep Me Away From IELTS" width={30} height={30} className="brand-icon" unoptimized />
-            <span>Gõ từ rơi</span>
+            <span>{customDeck ? `Gõ từ rơi · ${customDeck.name}` : "Gõ từ rơi"}</span>
           </div>
         </div>
         {status !== "menu" && (

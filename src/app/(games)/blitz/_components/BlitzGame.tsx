@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SoundToggle } from "@/components/SoundToggle";
+import { loadCustomDeck, type CustomDeck } from "@/lib/custom-deck";
 import { playError, playFever, playGameOver, playSuccess, playTick } from "@/lib/sfx";
 import { WORDS } from "@/lib/vocab";
 import { DIFFICULTIES, type Difficulty } from "@/lib/typing-engine";
@@ -41,9 +42,19 @@ export default function BlitzGame() {
   const [total, setTotal] = useState(0);
   const [question, setQuestion] = useState<BlitzQuestion | null>(null);
   const [flash, setFlash] = useState<{ idx: number; ok: boolean; bonusSec: number } | null>(null);
+  const [customDeck] = useState<CustomDeck | null>(() => {
+    if (params.get("deck") !== "custom") return null;
+    const d = loadCustomDeck();
+    if (!d) return null;
+    const withMeaning = d.entries.filter((e) => (e.meaning ?? "").trim().length > 0);
+    return withMeaning.length >= 4 ? { name: d.name, entries: withMeaning } : null;
+  });
   const didAutostart = useRef(false);
 
-  const pool = useMemo(() => filterBlitzPool(WORDS, difficulty), [difficulty]);
+  const pool = useMemo(
+    () => (customDeck ? customDeck.entries : filterBlitzPool(WORDS, difficulty)),
+    [customDeck, difficulty],
+  );
 
   const startRun = useCallback(() => {
     setScore(0);
@@ -133,7 +144,7 @@ export default function BlitzGame() {
           </Link>
           <div className="hud-brand">
             <Image src="/icons/blitz.png" alt="" width={30} height={30} className="brand-icon" unoptimized />
-            <span>Nối Nghĩa Tốc Độ</span>
+            <span>{customDeck ? `Blitz · ${customDeck.name}` : "Nối Nghĩa Tốc Độ"}</span>
           </div>
         </div>
         {phase !== "menu" && (

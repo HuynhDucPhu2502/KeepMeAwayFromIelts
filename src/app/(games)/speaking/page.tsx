@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { GameJsonLd } from "@/components/GameJsonLd";
 import { pageMetadata } from "@/lib/seo";
 import SpeakingGame from "./_components/SpeakingGame";
 
@@ -17,8 +18,16 @@ export const metadata = pageMetadata({
 
 export default function SpeakingPage() {
   return (
-    <Suspense fallback={<div className="game ws-page" />}>
-      <SpeakingGame />
-    </Suspense>
+    <>
+      <GameJsonLd
+        name="Phản Xạ Speaking · Part 1–3 & Cue Card Micro"
+        description="Luyện cụm từ nói tự nhiên IELTS Speaking Part 1–3 và thử thách Cue Card 45 giây có Micro tự động chấm từ khóa Band 8."
+        path="/speaking"
+        skill="IELTS Speaking Part 1, Part 2 & Part 3 Fluency"
+      />
+      <Suspense fallback={<div className="game ws-page" />}>
+        <SpeakingGame />
+      </Suspense>
+    </>
   );
 }

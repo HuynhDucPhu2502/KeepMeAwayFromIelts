@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { GameJsonLd } from "@/components/GameJsonLd";
 import { pageMetadata } from "@/lib/seo";
 import TypingGame from "./_components/TypingGame";
 
@@ -17,8 +18,16 @@ export const metadata = pageMetadata({
 
 export default function TypingPage() {
   return (
-    <Suspense fallback={<div className="game" />}>
-      <TypingGame />
-    </Suspense>
+    <>
+      <GameJsonLd
+        name="Gõ Từ Rơi IELTS"
+        description="Game gõ từ vựng & cụm từ IELTS rơi miễn phí: 5.785 từ học thuật, 307 cụm Reading/Listening, Boss mỗi 5 map và hồi máu."
+        path="/typing"
+        skill="IELTS Academic Vocabulary & Typing Speed"
+      />
+      <Suspense fallback={<div className="game" />}>
+        <TypingGame />
+      </Suspense>
+    </>
   );
 }

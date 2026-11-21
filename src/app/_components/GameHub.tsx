@@ -115,6 +115,16 @@ export default function GameHub() {
               );
             })}
           </div>
+
+          <Link href="/deck" className="hub-deck-banner">
+            <div>
+              <strong>✨ Tự tạo bộ từ riêng &amp; Chia sẻ link</strong>
+              <span>Dán từ vựng cá nhân / lớp học → chơi ngay trên 4 game từ vựng</span>
+            </div>
+            <span className="hub-game-arrow" aria-hidden>
+              ›
+            </span>
+          </Link>
         </section>
 
         {/* Right: Settings panel for the selected game */}
@@ -578,8 +588,8 @@ export default function GameHub() {
                     className={speakingMode === "cuecard" ? "mode selected" : "mode"}
                     onClick={() => setSpeakingMode("cuecard")}
                   >
-                    <strong>Thử Thách Cue Card 45 Giây (Part 2)</strong>
-                    <span>Tick 4 từ khoá Band 8 khi nói &amp; nghe bài mẫu</span>
+                    <strong>Thử Thách Cue Card 45 Giây (Part 2 · 🎙️ Micro)</strong>
+                    <span>Bật Micro tự chấm 4 từ khoá Band 8, đếm WPM &amp; nghe bài mẫu</span>
                   </button>
                 </div>
               </fieldset>

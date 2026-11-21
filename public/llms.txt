@@ -1,0 +1,20 @@
+# Keep Me Away From IELTS
+
+> Free interactive Vietnamese/English IELTS practice web app with 7 mini-games covering all 4 IELTS skills (Listening, Reading, Writing, Speaking), academic vocabulary, Custom Word Decks shareable by URL, and 30-player Party Battle Royale mode.
+
+- Website: https://keepmeawayfromielts.vnftgroup.com
+- Languages: Vietnamese (`vi`), English (`en`)
+- Pricing: 100% free, no login required
+
+## Mini-Games & Tools
+
+- [Game Hub](https://keepmeawayfromielts.vnftgroup.com/): Choose any of the 7 IELTS mini-games and customize difficulty, accent, or round length.
+- [Gõ Từ Rơi IELTS](https://keepmeawayfromielts.vnftgroup.com/typing): Falling-word typing game with 5,785 high-frequency IELTS words, 307 Reading/Listening phrases, boss waves every 5 maps, and heart recovery.
+- [Reading Sniper (True / False / Not Given)](https://keepmeawayfromielts.vnftgroup.com/reading): 24 authentic IELTS Academic reading passages with classic exam traps, inline evidence highlighting, and Band 5.0–9.0 estimation.
+- [Writing Sprint (Task 1 & Task 2)](https://keepmeawayfromielts.vnftgroup.com/writing): Interactive Task 1 chart analysis (8 real SVG chart types), Band 8 collocation cloze, and Task 2 paragraph coherence puzzles.
+- [Nghe & Gõ (Listening Dictation)](https://keepmeawayfromielts.vnftgroup.com/listening): UK/US Web Speech API IELTS vocabulary dictation with character-by-character spelling diff.
+- [Nối Nghĩa Tốc Độ (Vocab Blitz)](https://keepmeawayfromielts.vnftgroup.com/blitz): 30s/60s/90s 4-option vocabulary speed quiz with Fever Mode x2 points and time bonuses.
+- [Xếp Chữ IELTS (Word Scramble)](https://keepmeawayfromielts.vnftgroup.com/scramble): Unscramble IELTS vocabulary from Vietnamese meanings with keyboard and hint support.
+- [Phản Xạ Speaking (Part 1–3 & Live Mic Cue Card)](https://keepmeawayfromielts.vnftgroup.com/speaking): Natural spoken collocation drills plus 45-second Part 2 Cue Cards with browser Web Speech Recognition live microphone keyword tracking and WPM meter.
+- [Bộ Từ Riêng (Custom Word Deck)](https://keepmeawayfromielts.vnftgroup.com/deck): Paste personal or classroom word lists, share via compressed URL link with no database, and play across Typing, Listening, Blitz, and Scramble.
+- [Đấu Phòng Party (2–30 Players)](https://keepmeawayfromielts.vnftgroup.com/party): Real-time Battle Royale typing rooms with 4-letter codes, QR join, configurable timers, and multi-room support.

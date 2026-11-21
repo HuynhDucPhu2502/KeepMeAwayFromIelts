@@ -1,5 +1,6 @@
 import type { Viewport } from "next";
 import { Suspense } from "react";
+import { GameJsonLd } from "@/components/GameJsonLd";
 import { pageMetadata } from "@/lib/seo";
 import PartyPlayer from "./_components/PartyPlayer";
 
@@ -25,8 +26,16 @@ export const viewport: Viewport = {
 // PartyPlayer reads ?room= with useSearchParams, so it renders in the browser below this boundary.
 export default function PartyPage() {
   return (
-    <Suspense fallback={<div className="game party-phone" />}>
-      <PartyPlayer />
-    </Suspense>
+    <>
+      <GameJsonLd
+        name="Đấu Phòng Party · IELTS Typing Battle Royale"
+        description="Chế độ đấu phòng gõ từ vựng IELTS 2–30 người cùng lúc bằng mã 4 ký tự hoặc QR."
+        path="/party"
+        skill="Multiplayer IELTS Vocabulary Typing"
+      />
+      <Suspense fallback={<div className="game party-phone" />}>
+        <PartyPlayer />
+      </Suspense>
+    </>
   );
 }

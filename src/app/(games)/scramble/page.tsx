@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { GameJsonLd } from "@/components/GameJsonLd";
 import { pageMetadata } from "@/lib/seo";
 import ScrambleGame from "./_components/ScrambleGame";
 
@@ -17,8 +18,16 @@ export const metadata = pageMetadata({
 
 export default function ScramblePage() {
   return (
-    <Suspense fallback={<div className="game ws-page" />}>
-      <ScrambleGame />
-    </Suspense>
+    <>
+      <GameJsonLd
+        name="Xếp Chữ IELTS · Word Scramble"
+        description="Game ghép chữ cái bị xáo trộn từ nghĩa tiếng Việt để rèn trí nhớ mặt chữ và chính tả từ vựng IELTS."
+        path="/scramble"
+        skill="IELTS Vocabulary Spelling & Word Recognition"
+      />
+      <Suspense fallback={<div className="game ws-page" />}>
+        <ScrambleGame />
+      </Suspense>
+    </>
   );
 }

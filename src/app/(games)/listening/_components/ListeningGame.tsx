@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { SoundToggle } from "@/components/SoundToggle";
+import { loadCustomDeck, type CustomDeck } from "@/lib/custom-deck";
 import { playError, playGameOver, playSuccess } from "@/lib/sfx";
 import { PHRASES, WORDS } from "@/lib/vocab";
 import { DIFFICULTIES, type Difficulty, type Entry } from "@/lib/typing-engine";
@@ -54,10 +55,17 @@ export default function ListeningGame() {
   const [cleared, setCleared] = useState(0);
   const [result, setResult] = useState<{ exact: boolean; chars: DiffChar[]; points: number } | null>(null);
   const [ttsOk, setTtsOk] = useState(true);
+  const [customDeck] = useState<CustomDeck | null>(() => (params.get("deck") === "custom" ? loadCustomDeck() : null));
   const inputRef = useRef<HTMLInputElement>(null);
   const didAutostart = useRef(false);
 
-  const pool = useMemo(() => filterListeningPool(WORDS, PHRASES, source, difficulty), [source, difficulty]);
+  const pool = useMemo(
+    () =>
+      customDeck && customDeck.entries.length > 0
+        ? customDeck.entries
+        : filterListeningPool(WORDS, PHRASES, source, difficulty),
+    [customDeck, source, difficulty],
+  );
 
   const pickNext = useCallback(
     (avoid?: string) => {
@@ -140,7 +148,7 @@ export default function ListeningGame() {
           </Link>
           <div className="hud-brand">
             <Image src="/icons/listening.png" alt="" width={30} height={30} className="brand-icon" unoptimized />
-            <span>Nghe &amp; Gõ</span>
+            <span>{customDeck ? `Nghe & Gõ · ${customDeck.name}` : "Nghe & Gõ"}</span>
           </div>
         </div>
         {phase !== "menu" && (

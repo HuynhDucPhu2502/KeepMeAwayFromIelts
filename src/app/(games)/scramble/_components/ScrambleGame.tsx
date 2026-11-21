@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SoundToggle } from "@/components/SoundToggle";
+import { loadCustomDeck, type CustomDeck } from "@/lib/custom-deck";
 import { playError, playGameOver, playKey, playSuccess } from "@/lib/sfx";
 import { WORDS } from "@/lib/vocab";
 import { DIFFICULTIES, type Difficulty, type Entry } from "@/lib/typing-engine";
@@ -35,9 +36,19 @@ export default function ScrambleGame() {
   const [lives, setLives] = useState(LIVES);
   const [solved, setSolved] = useState(0);
   const [statusMsg, setStatusMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [customDeck] = useState<CustomDeck | null>(() => {
+    if (params.get("deck") !== "custom") return null;
+    const d = loadCustomDeck();
+    if (!d) return null;
+    const valid = d.entries.filter((e) => /^[a-z]{3,16}$/.test(e.text));
+    return valid.length > 0 ? { name: d.name, entries: valid } : null;
+  });
   const didAutostart = useRef(false);
 
-  const pool = useMemo(() => filterScramblePool(WORDS, difficulty), [difficulty]);
+  const pool = useMemo(
+    () => (customDeck ? customDeck.entries : filterScramblePool(WORDS, difficulty)),
+    [customDeck, difficulty],
+  );
 
   const loadWord = useCallback(
     (avoid?: string) => {
@@ -182,7 +193,7 @@ export default function ScrambleGame() {
           </Link>
           <div className="hud-brand">
             <Image src="/icons/scramble.png" alt="" width={30} height={30} className="brand-icon" unoptimized />
-            <span>Xếp Chữ IELTS</span>
+            <span>{customDeck ? `Xếp Chữ · ${customDeck.name}` : "Xếp Chữ IELTS"}</span>
           </div>
         </div>
         {phase !== "menu" && (

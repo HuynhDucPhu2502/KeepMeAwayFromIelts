@@ -8,11 +8,50 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { SoundToggle } from "@/components/SoundToggle";
 import { playError, playGameOver, playKey, playSuccess, playTick } from "@/lib/sfx";
 import {
+  computeSpeakingWpm,
+  countFillers,
+  countSpokenWords,
+  detectSpokenKeywords,
+} from "@/lib/speaking/speech-match";
+import {
   SPEAKING_CLOZE,
   SPEAKING_CUE_CARDS,
   type SpeakingCloze,
   type SpeakingCueCard,
 } from "@/lib/speaking/speaking-data";
+
+interface SpeechRecResultEvent {
+  resultIndex: number;
+  results: {
+    length: number;
+    [index: number]: {
+      isFinal: boolean;
+      [altIndex: number]: { transcript: string };
+    };
+  };
+}
+
+interface SpeechRecInstance {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: SpeechRecResultEvent) => void) | null;
+  onerror: ((event: { error?: string }) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
+type SpeechRecCtor = new () => SpeechRecInstance;
+
+function getSpeechRecognitionCtor(): SpeechRecCtor | null {
+  if (typeof window === "undefined") return null;
+  const w = window as unknown as {
+    SpeechRecognition?: SpeechRecCtor;
+    webkitSpeechRecognition?: SpeechRecCtor;
+  };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
+}
 
 type SpeakingMode = "cloze" | "cuecard";
 const LIVES = 5;
@@ -61,9 +100,44 @@ export default function SpeakingGame() {
   const [cueRunning, setCueRunning] = useState(false);
   const [usedKeywords, setUsedKeywords] = useState<string[]>([]);
   const [showSample, setShowSample] = useState(false);
+  // Live microphone speech recognition state
+  const [micAccent, setMicAccent] = useState<"en-GB" | "en-US">("en-US");
+  const [micActive, setMicActive] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
+  const [finalTranscript, setFinalTranscript] = useState("");
+  const [interimTranscript, setInterimTranscript] = useState("");
+  const recognitionRef = useRef<SpeechRecInstance | null>(null);
+  const micDesiredRef = useRef(false);
+  const keywordsRef = useRef<string[]>([]);
   const didAutostart = useRef(false);
 
+  const stopMic = useCallback(() => {
+    micDesiredRef.current = false;
+    setMicActive(false);
+    setInterimTranscript("");
+    const rec = recognitionRef.current;
+    recognitionRef.current = null;
+    if (rec) {
+      rec.onresult = null;
+      rec.onerror = null;
+      rec.onend = null;
+      try {
+        rec.stop();
+      } catch {
+        // Ignore already-stopped recognition
+      }
+    }
+  }, []);
+
+  const resetTranscript = useCallback(() => {
+    setFinalTranscript("");
+    setInterimTranscript("");
+    setMicError(null);
+  }, []);
+
   const startRun = useCallback(() => {
+    stopMic();
+    resetTranscript();
     setIdx(0);
     setScore(0);
     setCombo(0);
@@ -88,7 +162,7 @@ export default function SpeakingGame() {
       setShowSample(false);
     }
     setPhase("playing");
-  }, [mode]);
+  }, [mode, stopMic, resetTranscript]);
 
   useEffect(() => {
     if (didAutostart.current || params.get("autostart") !== "1") return;
@@ -102,6 +176,7 @@ export default function SpeakingGame() {
       setCueSec((s) => {
         if (s <= 1) {
           playGameOver(true);
+          stopMic();
           setCueRunning(false);
           setShowSample(true);
           return 0;
@@ -111,16 +186,96 @@ export default function SpeakingGame() {
       });
     }, 1000);
     return () => window.clearInterval(id);
-  }, [phase, mode, cueRunning]);
+  }, [phase, mode, cueRunning, stopMic]);
 
   useEffect(() => {
     return () => {
+      stopMic();
       if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
     };
-  }, []);
+  }, [stopMic]);
 
   const currentCloze = deck[idx];
   const currentCue = cueDeck[idx];
+
+  useEffect(() => {
+    keywordsRef.current = currentCue ? currentCue.keywords.map((k) => k.word) : [];
+  }, [currentCue]);
+
+  const startMic = useCallback(() => {
+    const Ctor = getSpeechRecognitionCtor();
+    if (!Ctor) {
+      setMicError("Trình duyệt này chưa hỗ trợ nhận diện giọng nói (dùng Chrome hoặc Edge để bật Micro tự chấm nhé).");
+      return;
+    }
+    if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
+    setMicError(null);
+    micDesiredRef.current = true;
+
+    const rec = new Ctor();
+    rec.lang = micAccent;
+    rec.continuous = true;
+    rec.interimResults = true;
+
+    rec.onresult = (event) => {
+      let finals = "";
+      let interims = "";
+      for (let i = 0; i < event.results.length; i++) {
+        const res = event.results[i];
+        const txt = res[0]?.transcript ?? "";
+        if (res.isFinal) finals += txt + " ";
+        else interims += txt + " ";
+      }
+      const combined = `${finals} ${interims}`.trim();
+      setFinalTranscript(finals.trim());
+      setInterimTranscript(interims.trim());
+
+      const hits = detectSpokenKeywords(combined, keywordsRef.current);
+      if (hits.length > 0) {
+        setUsedKeywords((prev) => {
+          const fresh = hits.filter((h) => !prev.includes(h));
+          if (fresh.length === 0) return prev;
+          const next = [...prev, ...fresh];
+          playSuccess(next.length);
+          setScore((s) => s + fresh.length * 100);
+          return next;
+        });
+      }
+    };
+
+    rec.onerror = (event) => {
+      const code = event.error ?? "";
+      if (code === "not-allowed" || code === "service-not-allowed") {
+        setMicError("Trình duyệt chưa cấp quyền Micro. Hãy cho phép Micro trên thanh địa chỉ hoặc tự bấm tick từ khoá bên dưới.");
+        stopMic();
+      } else if (code === "no-speech") {
+        // Ignore brief pauses while the user thinks
+      } else if (code && code !== "aborted") {
+        setMicError("Micro tạm ngắt kết nối. Bấm nút Micro để thu tiếp hoặc tự tick từ khoá.");
+      }
+    };
+
+    rec.onend = () => {
+      // Chrome stops continuous recognition after short silences; restart cleanly if still recording.
+      if (micDesiredRef.current && recognitionRef.current === rec) {
+        try {
+          rec.start();
+        } catch {
+          stopMic();
+        }
+      }
+    };
+
+    recognitionRef.current = rec;
+    try {
+      rec.start();
+      setMicActive(true);
+      setCueRunning(true);
+    } catch {
+      setMicError("Không mở được Micro lúc này. Thử bấm lại hoặc tự tick từ khoá.");
+      stopMic();
+    }
+  }, [micAccent, stopMic]);
 
   const onPickCloze = useCallback(
     (choiceIdx: number) => {
@@ -166,8 +321,11 @@ export default function SpeakingGame() {
   };
 
   const onNextCue = () => {
+    stopMic();
+    resetTranscript();
     if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
     if (idx + 1 >= cueDeck.length) {
+      playGameOver(true);
       setPhase("done");
       return;
     }
@@ -177,6 +335,12 @@ export default function SpeakingGame() {
     setUsedKeywords([]);
     setShowSample(false);
   };
+
+  const fullTranscript = `${finalTranscript} ${interimTranscript}`.trim();
+  const spokenWords = countSpokenWords(fullTranscript);
+  const spokenElapsed = Math.max(0, 45 - cueSec);
+  const spokenWpm = computeSpeakingWpm(spokenWords, spokenElapsed);
+  const spokenFillers = countFillers(fullTranscript);
 
   useEffect(() => {
     if (phase !== "playing" || mode !== "cloze" || !currentCloze) return;
@@ -388,9 +552,64 @@ export default function SpeakingGame() {
 
               <section className="ws-play">
                 <div className="ws-play-head">
-                  <span className="ws-tag">Bấm tick khi bạn nói trúng từ khoá (+100đ)</span>
+                  <span className="ws-tag">
+                    {micActive
+                      ? "🎙️ Đang nghe — nói trúng từ khoá sẽ tự sáng (+100đ)"
+                      : "Bật Micro tự chấm hoặc bấm tick tay (+100đ)"}
+                  </span>
                   <strong className="accent">{cueSec}s</strong>
                 </div>
+
+                <div className="mic-bar">
+                  <button
+                    type="button"
+                    className={micActive ? "btn mic-btn recording" : "btn primary mic-btn"}
+                    onClick={() => (micActive ? stopMic() : startMic())}
+                  >
+                    <span className={micActive ? "mic-dot active" : "mic-dot"} aria-hidden />
+                    <span>{micActive ? "Dừng Micro" : "🎙️ Bật Micro chấm tự động"}</span>
+                  </button>
+                  <div className="segmented segmented-2 mic-accent" role="group" aria-label="Giọng nhận diện">
+                    <button
+                      type="button"
+                      className={micAccent === "en-GB" ? "selected" : undefined}
+                      disabled={micActive}
+                      onClick={() => setMicAccent("en-GB")}
+                    >
+                      🇬🇧 UK
+                    </button>
+                    <button
+                      type="button"
+                      className={micAccent === "en-US" ? "selected" : undefined}
+                      disabled={micActive}
+                      onClick={() => setMicAccent("en-US")}
+                    >
+                      🇺🇸 US
+                    </button>
+                  </div>
+                </div>
+
+                {micError && <p className="mic-error">{micError}</p>}
+
+                {(micActive || fullTranscript) && (
+                  <div className="mic-transcript-box" aria-live="polite">
+                    <div className="mic-stats-row">
+                      <span>Đã nói: <strong>{spokenWords}</strong> từ</span>
+                      {spokenWpm > 0 && (
+                        <span>
+                          Tốc độ: <strong>{spokenWpm} WPM</strong>{" "}
+                          <em className="muted tiny">(chuẩn IELTS: 110–155)</em>
+                        </span>
+                      )}
+                      {spokenFillers > 0 && <span className="muted tiny">Ngập ngừng: {spokenFillers}</span>}
+                    </div>
+                    <p className="mic-transcript-text">
+                      {finalTranscript}
+                      {interimTranscript && <span className="mic-interim"> {interimTranscript}</span>}
+                      {!fullTranscript && <span className="muted">Hãy bắt đầu nói tiếng Anh theo Cue Card…</span>}
+                    </p>
+                  </div>
+                )}
 
                 <div className="cue-keywords">
                   {currentCue.keywords.map((kw) => {

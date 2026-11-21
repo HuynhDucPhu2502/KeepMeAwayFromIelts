@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { GameJsonLd } from "@/components/GameJsonLd";
 import { pageMetadata } from "@/lib/seo";
 import ReadingGame from "./_components/ReadingGame";
 
@@ -17,8 +18,16 @@ export const metadata = pageMetadata({
 
 export default function ReadingPage() {
   return (
-    <Suspense fallback={<div className="game ws-page" />}>
-      <ReadingGame />
-    </Suspense>
+    <>
+      <GameJsonLd
+        name="Reading Sniper · True / False / Not Given"
+        description="Game luyện IELTS Reading True / False / Not Given miễn phí với 24 đoạn văn học thuật bẫy kinh điển và highlight câu dẫn chứng."
+        path="/reading"
+        skill="IELTS Academic Reading (True / False / Not Given)"
+      />
+      <Suspense fallback={<div className="game ws-page" />}>
+        <ReadingGame />
+      </Suspense>
+    </>
   );
 }
