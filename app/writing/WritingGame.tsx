@@ -68,6 +68,11 @@ function parseInitialMode(raw: string | null): WritingMode {
   return "mixed";
 }
 
+function parseInitialCount(raw: string | null): WritingRoundCount {
+  const n = Number(raw);
+  return (WRITING_ROUND_COUNTS as readonly number[]).includes(n) ? (n as WritingRoundCount) : 10;
+}
+
 function renderSentence(sentence: string) {
   // Split on `{{error}}` or `___`
   const parts = sentence.split(/(\{\{[^}]+\}\}|___)/g);
@@ -100,7 +105,7 @@ interface AnswerFeedback {
 export default function WritingGame() {
   const params = useSearchParams();
   const [mode, setMode] = useState<WritingMode>(() => parseInitialMode(params.get("mode")));
-  const [roundCount, setRoundCount] = useState<WritingRoundCount>(10);
+  const [roundCount, setRoundCount] = useState<WritingRoundCount>(() => parseInitialCount(params.get("count")));
   const [phase, setPhase] = useState<"menu" | "playing" | "done">("menu");
   const [deck, setDeck] = useState<PreparedChallenge[]>([]);
   const [index, setIndex] = useState(0);
@@ -114,6 +119,7 @@ export default function WritingGame() {
   const [takeaways, setTakeaways] = useState<string[]>([]);
   const [bestAtStart, setBestAtStart] = useState(0);
   const questionStartAt = useRef(0);
+  const didAutostart = useRef(false);
 
   const bestRaw = useSyncExternalStore(subscribeBest, readBestRaw, () => "");
   const bestScores = useMemo(() => parseBest(bestRaw), [bestRaw]);
@@ -155,6 +161,13 @@ export default function WritingGame() {
     questionStartAt.current = performance.now();
     setPhase("playing");
   }, [mode, roundCount, best]);
+
+  // Auto-launch straight into play when opened from the main hub's settings panel.
+  useEffect(() => {
+    if (didAutostart.current || params.get("autostart") !== "1") return;
+    didAutostart.current = true;
+    void Promise.resolve().then(() => startRun());
+  }, [params, startRun]);
 
   const applyOutcome = useCallback(
     (ok: boolean, isOrder: boolean, takeaway: string, pickedChoice?: number) => {
