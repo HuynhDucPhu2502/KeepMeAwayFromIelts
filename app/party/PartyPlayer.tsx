@@ -4,9 +4,11 @@
 // The game itself runs entirely on this phone; only the score, lives and alive flag go to Firebase.
 import { useCallback, useEffect, useReducer, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
+import QRCode from "qrcode";
 import wordsData from "@/data/words.json";
 import phrasesData from "@/data/phrases.json";
 import {
+  DIFFICULTIES,
   LIVES,
   RANDS_PER_TICK,
   initialState,
@@ -14,27 +16,48 @@ import {
   pendingExact,
   reducer,
   stats,
+  type Difficulty,
   type Entry,
   type GameState,
+  type Mode,
 } from "../game/engine";
 import { Lane } from "../game/Lane";
 import {
   DISCONNECT_GRACE_MS,
   MAX_NAME,
   aliveCount,
+  backToLobby,
+  closeRoom,
+  createRoom,
+  endRound,
   ensureSignedIn,
   freshRoundState,
   joinRoom,
+  leaveRoom,
   participants,
   publishPlayer,
   rankPlayers,
   serverNow,
+  shouldEnd,
   shouldEnroll,
+  startRound,
   subscribeRoom,
+  updateRoomSettings,
   type PlayerState,
   type Room,
+  type RoomSettings,
 } from "./room";
-import { AvailabilityNotice, Notice, errorText, formatClock, settingsLabel, usePartyAvailability } from "./common";
+import { fallbackCards } from "./report-core";
+import {
+  AvailabilityNotice,
+  MODE_LABEL,
+  Notice,
+  errorText,
+  formatClock,
+  settingsLabel,
+  toReportPlayer,
+  usePartyAvailability,
+} from "./common";
 
 const WORDS = wordsData as Entry[];
 const PHRASES = phrasesData as Entry[];
@@ -81,9 +104,27 @@ function writeSaved(code: string, name: string) {
   }
 }
 
+function clearSaved() {
+  try {
+    window.sessionStorage.removeItem(SAVED_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+function replaceRoomUrl(code: string | null) {
+  try {
+    const nextUrl = code ? `/party?room=${code}` : "/party";
+    window.history.replaceState(null, "", nextUrl);
+  } catch {
+    // ignore
+  }
+}
+
 export default function PartyPlayer() {
   const availability = usePartyAvailability();
   const params = useSearchParams();
+  const [entryTab, setEntryTab] = useState<"join" | "create">("join");
   const [codeInput, setCodeInput] = useState(() => cleanCode(params.get("room") ?? ""));
   const [nameInput, setNameInput] = useState("");
   const [joining, setJoining] = useState(false);
@@ -93,6 +134,11 @@ export default function PartyPlayer() {
   const [now, setNow] = useState(0);
   const [control, setControl] = useState<Control>({ localRound: null, startedRound: null, forfeitRound: null });
   const [engine, dispatch] = useReducer(reducer, undefined, () => initialState("words", "easy"));
+  const [hostSettings, setHostSettings] = useState<RoomSettings>({ mode: "words", difficulty: "easy" });
+  const [hostBusy, setHostBusy] = useState(false);
+  const [hostError, setHostError] = useState<string | null>(null);
+  const [qr, setQr] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -101,6 +147,8 @@ export default function PartyPlayer() {
   const controlRef = useRef<Control>(control);
   const publishState = useRef({ at: 0, sig: "", eliminatedAt: null as number | null, enrolling: -1 });
   const hiddenAt = useRef<number | null>(null);
+  const endingRound = useRef<number | null>(null);
+  const syncedSettingsFor = useRef<string | null>(null);
 
   useEffect(() => {
     engineRef.current = engine;
@@ -117,10 +165,11 @@ export default function PartyPlayer() {
     try {
       const uid = await ensureSignedIn();
       const result = await joinRoom(code, uid, name);
-      if (result === "missing") setJoinError(`Không tìm thấy phòng ${code}. Kiểm tra lại mã trên màn hình lớn nhé.`);
+      if (result === "missing") setJoinError(`Không tìm thấy phòng ${code}. Kiểm tra lại mã phòng nhé.`);
       else if (result === "full") setJoinError("Phòng đã đủ 30 người rồi, chờ lượt sau nhé.");
       else {
         writeSaved(code, name);
+        replaceRoomUrl(code);
         setSession({ code, uid, name });
       }
     } catch (error) {
@@ -129,6 +178,44 @@ export default function PartyPlayer() {
       setJoining(false);
     }
   }, []);
+
+  const createAndJoin = useCallback(async (name: string) => {
+    setJoining(true);
+    setJoinError(null);
+    try {
+      const uid = await ensureSignedIn();
+      const code = await createRoom(uid);
+      const result = await joinRoom(code, uid, name);
+      if (result !== "ok") {
+        setJoinError("Không tạo được phòng. Thử lại nhé.");
+        return;
+      }
+      writeSaved(code, name);
+      replaceRoomUrl(code);
+      setCodeInput(code);
+      setSession({ code, uid, name });
+    } catch (error) {
+      setJoinError(errorText(error));
+    } finally {
+      setJoining(false);
+    }
+  }, []);
+
+  const resetToEntry = useCallback(() => {
+    clearSaved();
+    replaceRoomUrl(null);
+    endingRound.current = null;
+    syncedSettingsFor.current = null;
+    roomRef.current = undefined;
+    publishState.current = { at: 0, sig: "", eliminatedAt: null, enrolling: -1 };
+    setSession(null);
+    setRoom(undefined);
+    setHostError(null);
+    setQr("");
+    setCopied(false);
+    updateControl({ localRound: null, startedRound: null, forfeitRound: null });
+    dispatch({ type: "menu" });
+  }, [updateControl]);
 
   // After a reload of this tab, rejoin the same room with the same name.
   useEffect(() => {
@@ -165,8 +252,32 @@ export default function PartyPlayer() {
     if (!session) return;
     return subscribeRoom(session.code, (next) => {
       roomRef.current = next;
+      if (next && syncedSettingsFor.current !== session.code) {
+        syncedSettingsFor.current = session.code;
+        setHostSettings(next.settings);
+      }
     });
   }, [session]);
+
+  const isHost = !!room && !!session && room.hostUid === session.uid;
+
+  useEffect(() => {
+    if (!isHost || !session) return;
+    QRCode.toString(`${window.location.origin}/party?room=${session.code}`, {
+      type: "svg",
+      margin: 1,
+      errorCorrectionLevel: "M",
+      color: { dark: "#070b1a", light: "#ffffff" },
+    })
+      .then(setQr)
+      .catch(() => setQr(""));
+  }, [isHost, session]);
+
+  useEffect(() => {
+    if (!copied) return;
+    const id = window.setTimeout(() => setCopied(false), 2_000);
+    return () => window.clearTimeout(id);
+  }, [copied]);
 
   /** Sends this phone's round state, skipping duplicates. */
   const publish = useCallback(() => {
@@ -197,6 +308,64 @@ export default function PartyPlayer() {
       ps.sig = ""; // retry on the next pass
     });
   }, [session]);
+
+  /** Ends a player-hosted round using free template band cards (never calls Gemini / Vertex AI). */
+  const finishAsHost = useCallback(
+    async (r: Room) => {
+      if (!session || r.hostUid !== session.uid || endingRound.current === r.round) return;
+      endingRound.current = r.round;
+      publish();
+      // Include this device's freshest local stats in case the last 500 ms tick hasn't echoed back yet.
+      let snapshot = r;
+      const ctl = controlRef.current;
+      const me = r.players[session.uid];
+      if (me && ctl.startedRound === r.round) {
+        const s = engineRef.current;
+        const localOut = s.status === "over" || ctl.forfeitRound === r.round;
+        const { wpm, accuracy } = stats(s);
+        snapshot = {
+          ...r,
+          players: {
+            ...r.players,
+            [session.uid]: {
+              ...me,
+              score: s.score,
+              lives: s.lives,
+              map: s.map,
+              cleared: s.cleared,
+              accuracy,
+              wpm,
+              alive: !localOut,
+              missed: s.missed.slice(0, 20).map((m) => m.text),
+              eliminatedAt: localOut ? (publishState.current.eliminatedAt ?? me.eliminatedAt ?? serverNow()) : null,
+            },
+          },
+        };
+      }
+      const ranking = rankPlayers(snapshot, serverNow());
+      const top = ranking.slice(0, 3).map((uid) => toReportPlayer(snapshot, uid));
+      const cards = fallbackCards(top);
+      try {
+        await endRound(session.code, { ranking, cards, fallback: true });
+      } catch (e) {
+        endingRound.current = null; // retries on the next 500 ms tick
+        setHostError(errorText(e));
+      }
+    },
+    [session, publish],
+  );
+
+  // Player-host end check every 500 ms (same rule as PartyHost, without Gemini).
+  useEffect(() => {
+    if (!session || !isHost) return;
+    const id = window.setInterval(() => {
+      const r = roomRef.current;
+      if (r && r.status === "playing" && r.hostUid === session.uid && shouldEnd(r, serverNow())) {
+        void finishAsHost(r);
+      }
+    }, 500);
+    return () => window.clearInterval(id);
+  }, [session, isHost, finishAsHost]);
 
   // Controller: server clock, room snapshot, joining the round, starting the engine, periodic publish.
   useEffect(() => {
@@ -323,13 +492,82 @@ export default function PartyPlayer() {
     if (running) inputRef.current?.focus();
   }, [running]);
 
-  const onJoin = (event: FormEvent) => {
+  const onJoinOrCreate = (event: FormEvent) => {
     event.preventDefault();
-    const code = cleanCode(codeInput);
     const name = nameInput.replace(/\s+/g, " ").trim();
-    if (code.length !== 4) return setJoinError("Mã phòng gồm 4 chữ cái, xem trên màn hình lớn nhé.");
     if (!name) return setJoinError("Nhập tên của bạn nhé.");
+    if (entryTab === "create") {
+      void createAndJoin(name);
+      return;
+    }
+    const code = cleanCode(codeInput);
+    if (code.length !== 4) return setJoinError("Mã phòng gồm 4 chữ cái, xem trên màn hình lớn nhé.");
     void join(code, name);
+  };
+
+  const onHostSettings = (next: RoomSettings) => {
+    setHostSettings(next);
+    if (session && isHost && room?.status === "lobby") {
+      updateRoomSettings(session.code, next).catch(() => {});
+    }
+  };
+
+  const onHostStart = async () => {
+    if (!session || !room || !isHost) return;
+    setHostBusy(true);
+    setHostError(null);
+    try {
+      endingRound.current = null;
+      await startRound(session.code, room, hostSettings);
+    } catch (e) {
+      setHostError(errorText(e));
+    } finally {
+      setHostBusy(false);
+    }
+  };
+
+  const onHostLobby = async () => {
+    if (!session || !isHost) return;
+    setHostBusy(true);
+    setHostError(null);
+    try {
+      await backToLobby(session.code);
+    } catch (e) {
+      setHostError(errorText(e));
+    } finally {
+      setHostBusy(false);
+    }
+  };
+
+  const onHostClose = async () => {
+    if (!session || !isHost) return;
+    setHostBusy(true);
+    setHostError(null);
+    try {
+      await closeRoom(session.code);
+      resetToEntry();
+    } catch (e) {
+      setHostError(errorText(e));
+    } finally {
+      setHostBusy(false);
+    }
+  };
+
+  const onLeave = async () => {
+    if (!session) return;
+    setHostBusy(true);
+    try {
+      await leaveRoom(session.code, session.uid, room?.status === "lobby");
+    } finally {
+      setHostBusy(false);
+      resetToEntry();
+    }
+  };
+
+  const onCopyLink = () => {
+    if (!session) return;
+    const url = `${window.location.origin}/party?room=${session.code}`;
+    navigator.clipboard?.writeText(url).then(() => setCopied(true)).catch(() => {});
   };
 
   const pending = running ? pendingExact(engine) : undefined;
@@ -343,30 +581,70 @@ export default function PartyPlayer() {
   else if (!session)
     overlay = (
       <JoinForm
+        tab={entryTab}
         code={codeInput}
         name={nameInput}
         joining={joining}
         error={joinError}
+        onTab={(t) => {
+          setEntryTab(t);
+          setJoinError(null);
+        }}
         onCode={(v) => setCodeInput(cleanCode(v))}
         onName={setNameInput}
-        onSubmit={onJoin}
+        onSubmit={onJoinOrCreate}
       />
     );
   else if (room === undefined) overlay = <Notice title="Đang vào phòng…" />;
   else if (room === null)
     overlay = (
       <Notice title="Phòng không còn nữa">
-        <p className="muted small">Phòng {session.code} đã đóng. Quét lại mã QR trên màn hình lớn nhé.</p>
+        <p className="muted small">Phòng {session.code} đã đóng. Bạn có thể vào phòng khác hoặc tạo phòng mới.</p>
+        <button type="button" className="btn primary" onClick={resetToEntry}>
+          Quay lại
+        </button>
       </Notice>
     );
-  else if (room.status === "lobby") overlay = <Lobby room={room} session={session} />;
-  else if (room.status === "ended") overlay = <Ended room={room} session={session} />;
+  else if (room.status === "lobby")
+    overlay = (
+      <Lobby
+        room={room}
+        session={session}
+        isHost={isHost}
+        qr={qr}
+        copied={copied}
+        settings={hostSettings}
+        busy={hostBusy}
+        error={hostError}
+        onCopyLink={onCopyLink}
+        onSettings={onHostSettings}
+        onStart={() => void onHostStart()}
+        onClose={() => void onHostClose()}
+        onLeave={() => void onLeave()}
+      />
+    );
+  else if (room.status === "ended")
+    overlay = (
+      <Ended
+        room={room}
+        session={session}
+        isHost={isHost}
+        busy={hostBusy}
+        error={hostError}
+        onLobby={() => void onHostLobby()}
+        onClose={() => void onHostClose()}
+        onLeave={() => void onLeave()}
+      />
+    );
   else if (!inRound)
     overlay = (
       <Notice title="Vòng đang chạy, chờ vòng sau nhé">
         <p className="muted small">
           Còn {alive}/{total} người đang trụ. Bạn sẽ được vào ngay khi host bắt đầu vòng mới.
         </p>
+        <button type="button" className="btn btn-sm" disabled={hostBusy} onClick={() => void onLeave()}>
+          Rời phòng
+        </button>
       </Notice>
     );
   else if (out)
@@ -378,6 +656,8 @@ export default function PartyPlayer() {
         engine={engine}
         forfeited={forfeited && engine.status !== "over"}
         alive={alive}
+        isHost={isHost}
+        onEndNow={() => void finishAsHost(room)}
       />
     );
   else if (timeUp)
@@ -475,10 +755,12 @@ export default function PartyPlayer() {
 }
 
 function JoinForm(props: {
+  tab: "join" | "create";
   code: string;
   name: string;
   joining: boolean;
   error: string | null;
+  onTab: (tab: "join" | "create") => void;
   onCode: (value: string) => void;
   onName: (value: string) => void;
   onSubmit: (event: FormEvent) => void;
@@ -489,22 +771,48 @@ function JoinForm(props: {
         <h1 className="title">
           Keep Me Away From <span className="accent">IELTS</span> · Party
         </h1>
-        <p className="muted small">Cả booth cùng chơi một vòng. Để rơi 5 từ là bị loại, người trụ lại cuối cùng thắng!</p>
-        <label className="party-field">
-          <span>Mã phòng</span>
-          <input
-            className="type-input party-code-input"
-            value={props.code}
-            onChange={(e) => props.onCode(e.target.value)}
-            placeholder="ABCD"
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="characters"
-            spellCheck={false}
-            inputMode="text"
-            maxLength={4}
-          />
-        </label>
+        <div className="segmented segmented-2 party-tabs" role="tablist" aria-label="Vào phòng hoặc tạo phòng">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={props.tab === "join"}
+            className={props.tab === "join" ? "selected" : undefined}
+            onClick={() => props.onTab("join")}
+          >
+            Vào phòng
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={props.tab === "create"}
+            className={props.tab === "create" ? "selected" : undefined}
+            onClick={() => props.onTab("create")}
+          >
+            Tạo phòng
+          </button>
+        </div>
+        <p className="muted small">
+          {props.tab === "join"
+            ? "Cùng nhau gõ từ rơi. Để rơi 5 từ là bị loại, người trụ lại cuối cùng thắng!"
+            : "Tạo phòng riêng (tối đa 30 người) — không cần mã PIN, bạn vừa điều khiển phòng vừa cùng chơi!"}
+        </p>
+        {props.tab === "join" && (
+          <label className="party-field">
+            <span>Mã phòng</span>
+            <input
+              className="type-input party-code-input"
+              value={props.code}
+              onChange={(e) => props.onCode(e.target.value)}
+              placeholder="ABCD"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              inputMode="text"
+              maxLength={4}
+            />
+          </label>
+        )}
         <label className="party-field">
           <span>Tên của bạn</span>
           <input
@@ -519,17 +827,122 @@ function JoinForm(props: {
         </label>
         {props.error && <p className="party-error">{props.error}</p>}
         <button type="submit" className="btn primary big" disabled={props.joining}>
-          {props.joining ? "Đang vào…" : "Vào phòng"}
+          {props.tab === "create"
+            ? props.joining
+              ? "Đang tạo phòng…"
+              : "Tạo phòng mới"
+            : props.joining
+              ? "Đang vào…"
+              : "Vào phòng"}
         </button>
       </form>
     </div>
   );
 }
 
-function Lobby({ room, session }: { room: Room; session: Session }) {
+function Lobby(props: {
+  room: Room;
+  session: Session;
+  isHost: boolean;
+  qr: string;
+  copied: boolean;
+  settings: RoomSettings;
+  busy: boolean;
+  error: string | null;
+  onCopyLink: () => void;
+  onSettings: (settings: RoomSettings) => void;
+  onStart: () => void;
+  onClose: () => void;
+  onLeave: () => void;
+}) {
+  const { room, session, isHost } = props;
   const players = Object.entries(room.players)
     .filter(([, p]) => p.connected)
     .sort(([, a], [, b]) => a.joinedAt - b.joinedAt);
+
+  if (isHost) {
+    return (
+      <div className="overlay">
+        <div className="card party-lobby-card">
+          <h2>Phòng của bạn</h2>
+          <div className="party-share-row">
+            {props.qr && (
+              <div
+                className="party-qr party-player-host-qr"
+                aria-label={`Mã QR vào phòng ${session.code}`}
+                dangerouslySetInnerHTML={{ __html: props.qr }}
+              />
+            )}
+            <div className="party-share-info">
+              <span className="muted tiny">MÃ PHÒNG</span>
+              <strong className="party-share-code">{session.code}</strong>
+              <button type="button" className="btn btn-sm" onClick={props.onCopyLink}>
+                {props.copied ? "Đã sao chép link!" : "Sao chép link mời"}
+              </button>
+            </div>
+          </div>
+          <p className="muted small">
+            {players.length} người trong phòng <span className="tiny">(tối đa 30)</span>
+          </p>
+          <ul className="party-names">
+            {players.map(([uid, p]) => (
+              <li key={uid} className={uid === session.uid ? "me" : undefined}>
+                {p.name}
+              </li>
+            ))}
+          </ul>
+          <fieldset className="choice">
+            <legend>Chế độ</legend>
+            <div className="segmented segmented-2">
+              {(Object.keys(MODE_LABEL) as Mode[]).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  className={m === props.settings.mode ? "selected" : undefined}
+                  aria-pressed={m === props.settings.mode}
+                  onClick={() => props.onSettings({ ...props.settings, mode: m })}
+                >
+                  {MODE_LABEL[m]}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          <fieldset className="choice">
+            <legend>Độ khó</legend>
+            <div className="segmented">
+              {(Object.keys(DIFFICULTIES) as Difficulty[]).map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  className={d === props.settings.difficulty ? "selected" : undefined}
+                  aria-pressed={d === props.settings.difficulty}
+                  onClick={() => props.onSettings({ ...props.settings, difficulty: d })}
+                >
+                  {DIFFICULTIES[d].label}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          {props.error && <p className="party-error">{props.error}</p>}
+          <div className="actions">
+            <button
+              type="button"
+              className="btn primary big"
+              disabled={players.length === 0 || props.busy}
+              onClick={props.onStart}
+            >
+              Bắt đầu
+            </button>
+            <button type="button" className="btn btn-danger" disabled={props.busy} onClick={props.onClose}>
+              Đóng phòng
+            </button>
+          </div>
+          <p className="muted tiny">Vòng tối đa 3 phút · để rơi 5 từ là bị loại · chấm band theo mẫu miễn phí.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Notice title="Chờ host bắt đầu…">
       <p className="muted small">
@@ -544,11 +957,23 @@ function Lobby({ room, session }: { room: Room; session: Session }) {
         ))}
       </ul>
       <p className="muted tiny">Vòng chơi tối đa 3 phút. Không tạm dừng được, nên giữ màn hình luôn mở nhé.</p>
+      <button type="button" className="btn btn-sm" disabled={props.busy} onClick={props.onLeave}>
+        Rời phòng
+      </button>
     </Notice>
   );
 }
 
-function Out(props: { room: Room; session: Session; now: number; engine: GameState; forfeited: boolean; alive: number }) {
+function Out(props: {
+  room: Room;
+  session: Session;
+  now: number;
+  engine: GameState;
+  forfeited: boolean;
+  alive: number;
+  isHost: boolean;
+  onEndNow: () => void;
+}) {
   const { room, session, engine } = props;
   const ranking = rankPlayers(room, props.now);
   const rank = ranking.indexOf(session.uid) + 1;
@@ -576,11 +1001,26 @@ function Out(props: { room: Room; session: Session; now: number; engine: GameSta
           </ul>
         </div>
       )}
+      {props.isHost && props.alive > 0 && (
+        <button type="button" className="btn btn-sm" onClick={props.onEndNow}>
+          Kết thúc vòng ngay
+        </button>
+      )}
     </Notice>
   );
 }
 
-function Ended({ room, session }: { room: Room; session: Session }) {
+function Ended(props: {
+  room: Room;
+  session: Session;
+  isHost: boolean;
+  busy: boolean;
+  error: string | null;
+  onLobby: () => void;
+  onClose: () => void;
+  onLeave: () => void;
+}) {
+  const { room, session, isHost } = props;
   const results = room.results;
   const ranking = results?.ranking ?? [];
   const rank = ranking.indexOf(session.uid) + 1;
@@ -607,7 +1047,24 @@ function Ended({ room, session }: { room: Room; session: Session }) {
           ))}
         </ol>
       )}
-      <p className="muted small">{rank > 0 ? "Chờ host mở vòng mới nhé!" : "Bạn sẽ được vào vòng sau. Chờ host nhé!"}</p>
+      {props.error && <p className="party-error">{props.error}</p>}
+      {isHost ? (
+        <div className="actions">
+          <button type="button" className="btn primary" disabled={props.busy} onClick={props.onLobby}>
+            Vòng mới
+          </button>
+          <button type="button" className="btn btn-danger" disabled={props.busy} onClick={props.onClose}>
+            Đóng phòng
+          </button>
+        </div>
+      ) : (
+        <>
+          <p className="muted small">{rank > 0 ? "Chờ host mở vòng mới nhé!" : "Bạn sẽ được vào vòng sau. Chờ host nhé!"}</p>
+          <button type="button" className="btn btn-sm" disabled={props.busy} onClick={props.onLeave}>
+            Rời phòng
+          </button>
+        </>
+      )}
     </Notice>
   );
 }

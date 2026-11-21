@@ -3,6 +3,7 @@
     "rooms": {
       "$code": {
         ".read": "auth != null",
+        ".write": "auth != null && data.child('hostUid').val() === auth.uid && !newData.exists()",
         "hostUid": {
           ".write": "auth != null && !data.exists() && newData.val() === auth.uid"
         },

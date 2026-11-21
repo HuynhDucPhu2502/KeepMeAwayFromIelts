@@ -6,13 +6,17 @@ import {
   MAX_NAME,
   ROOM_ALPHABET,
   ROUND_MS,
+  addRoomCode,
   cleanName,
   freshRoundState,
   isOut,
+  isRoomCode,
   makeRoomCode,
   normalizeRoom,
+  parseRoomCodes,
   participants,
   rankPlayers,
+  removeRoomCode,
   shouldEnd,
   shouldEnroll,
 } from "../app/party/room-logic.ts";
@@ -225,4 +229,27 @@ test("normalizeRoom fills what Realtime Database drops (empty arrays, nulls)", (
 
   const ended = normalizeRoom({ hostUid: "h", status: "ended", results: { ranking: { 0: "a", 1: "b" }, fallback: true } });
   assert.deepEqual(ended.results, { ranking: ["a", "b"], cards: [], fallback: true });
+
+  assert.equal(normalizeRoom({ hostUid: "h", status: "closed" }), null);
+});
+
+test("multi-room code helpers validate, deduplicate, parse and remove codes", () => {
+  assert.equal(isRoomCode("ABCD"), true);
+  assert.equal(isRoomCode("ABCI"), false); // I is excluded
+  assert.equal(isRoomCode("ABCO"), false); // O is excluded
+  assert.equal(isRoomCode("ABC"), false);
+  assert.equal(isRoomCode("abcd"), false);
+
+  assert.deepEqual(addRoomCode([], "ABCD"), ["ABCD"]);
+  assert.deepEqual(addRoomCode(["ABCD"], "ABCD"), ["ABCD"]);
+  assert.deepEqual(addRoomCode(["ABCD"], "EFGH"), ["ABCD", "EFGH"]);
+  assert.deepEqual(addRoomCode(["ABCD"], "BAD!"), ["ABCD"]);
+
+  assert.deepEqual(removeRoomCode(["ABCD", "EFGH"], "ABCD"), ["EFGH"]);
+  assert.deepEqual(removeRoomCode(["ABCD"], "ZZZZ"), ["ABCD"]);
+
+  assert.deepEqual(parseRoomCodes(null), []);
+  assert.deepEqual(parseRoomCodes("not json"), []);
+  assert.deepEqual(parseRoomCodes('{"a":1}'), []);
+  assert.deepEqual(parseRoomCodes('["ABCD","EFGH","ABCD","NOPE","ABIO",123]'), ["ABCD", "EFGH"]);
 });

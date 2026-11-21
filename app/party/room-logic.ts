@@ -58,6 +58,7 @@ export const DISCONNECT_GRACE_MS = 10_000;
 const LIVES = 5; // same as the engine's LIVES (kept local so this module has no runtime imports)
 
 export const ROOM_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // A–Z without I and O
+const ROOM_CODE_RE = /^[A-HJ-NP-Z]{4}$/;
 
 export function makeRoomCode(rand: () => number): string {
   let code = "";
@@ -65,6 +66,38 @@ export function makeRoomCode(rand: () => number): string {
     code += ROOM_ALPHABET[Math.min(ROOM_ALPHABET.length - 1, Math.floor(rand() * ROOM_ALPHABET.length))];
   }
   return code;
+}
+
+export function isRoomCode(value: unknown): value is string {
+  return typeof value === "string" && ROOM_CODE_RE.test(value);
+}
+
+export function addRoomCode(codes: readonly string[], code: string): string[] {
+  if (!isRoomCode(code)) return [...codes];
+  return codes.includes(code) ? [...codes] : [...codes, code];
+}
+
+export function removeRoomCode(codes: readonly string[], code: string): string[] {
+  return codes.filter((c) => c !== code);
+}
+
+export function parseRoomCodes(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const item of parsed) {
+      if (isRoomCode(item) && !seen.has(item)) {
+        seen.add(item);
+        out.push(item);
+      }
+    }
+    return out;
+  } catch {
+    return [];
+  }
 }
 
 export function cleanName(raw: string): string {
@@ -166,6 +199,7 @@ export function normalizeRoom(raw: unknown): Room | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
   if (typeof r.hostUid !== "string") return null;
+  if (r.status === "closed") return null;
   const settings = obj(r.settings);
   const status: RoomStatus = r.status === "playing" || r.status === "ended" ? r.status : "lobby";
   const players: Record<string, PlayerState> = {};

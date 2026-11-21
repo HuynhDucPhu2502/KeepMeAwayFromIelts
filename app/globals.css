@@ -1413,3 +1413,101 @@ kbd {
     grid-template-columns: 1fr;
   }
 }
+
+/* Multi-room host switcher & player-created room lobby */
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+.btn-danger {
+  border-color: rgba(248, 113, 113, 0.45);
+  color: var(--danger);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.12);
+}
+
+.party-host-bar {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.party-host-controls {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.party-room-tabs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.party-room-tab {
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  font-family: var(--font-mono-ui), monospace;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.party-room-tab.active {
+  border-color: var(--accent);
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--accent);
+}
+
+.party-room-tab:focus-visible {
+  outline: 2px solid var(--target);
+  outline-offset: 2px;
+}
+
+.party-lobby-card {
+  max-width: 420px;
+  text-align: center;
+}
+
+.party-share-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.party-player-host-qr {
+  width: 108px;
+  flex-shrink: 0;
+  padding: 6px;
+  border-radius: 10px;
+}
+
+.party-share-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.party-share-code {
+  font-family: var(--font-mono-ui), monospace;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+}

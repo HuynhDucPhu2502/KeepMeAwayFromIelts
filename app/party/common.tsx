@@ -4,6 +4,8 @@
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { DIFFICULTIES, type Difficulty, type Mode } from "../game/engine";
+import type { ReportPlayer } from "./report-core";
+import type { Room } from "./room-logic";
 
 export type Availability = "loading" | "on" | "off" | "error";
 
@@ -68,6 +70,19 @@ export function AvailabilityNotice({ availability }: { availability: Availabilit
       <p className="muted small">Kiểm tra mạng rồi tải lại trang nhé.</p>
     </Notice>
   );
+}
+
+export function toReportPlayer(room: Room, uid: string): ReportPlayer {
+  const p = room.players[uid];
+  return {
+    uid,
+    name: p?.name ?? "?",
+    score: p?.score ?? 0,
+    map: p?.map ?? 1,
+    accuracy: p?.accuracy ?? 100,
+    wpm: p?.wpm ?? 0,
+    missed: (p?.missed ?? []).slice(0, 5),
+  };
 }
 
 export function errorText(error: unknown) {

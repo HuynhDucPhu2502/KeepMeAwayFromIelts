@@ -6,28 +6,34 @@ import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNod
 import QRCode from "qrcode";
 import { DIFFICULTIES, LIVES, type Difficulty, type Mode } from "../game/engine";
 import {
+  addRoomCode,
   aliveCount,
   backToLobby,
+  closeRoom,
   createRoom,
   endRound,
   ensureSignedIn,
   getRoom,
   isOut,
+  parseRoomCodes,
   participants,
   rankPlayers,
+  removeRoomCode,
   serverNow,
   shouldEnd,
   startRound,
   subscribeRoom,
+  updateRoomSettings,
   type BandCard,
   type Room,
   type RoomSettings,
 } from "./room";
-import { fallbackCards, type ReportPlayer } from "./report-core";
-import { AvailabilityNotice, MODE_LABEL, errorText, formatClock, settingsLabel, usePartyAvailability } from "./common";
+import { fallbackCards } from "./report-core";
+import { AvailabilityNotice, MODE_LABEL, errorText, formatClock, settingsLabel, toReportPlayer, usePartyAvailability } from "./common";
 
 const PIN_KEY = "kmafi:party:pin";
 const ROOM_KEY = "kmafi:party:host-room";
+const ROOMS_KEY = "kmafi:party:host-rooms";
 
 function readStorage(key: string) {
   try {
@@ -55,19 +61,6 @@ async function checkPin(pin: string): Promise<boolean> {
   return res.ok;
 }
 
-function toReportPlayer(room: Room, uid: string): ReportPlayer {
-  const p = room.players[uid];
-  return {
-    uid,
-    name: p?.name ?? "?",
-    score: p?.score ?? 0,
-    map: p?.map ?? 1,
-    accuracy: p?.accuracy ?? 100,
-    wpm: p?.wpm ?? 0,
-    missed: (p?.missed ?? []).slice(0, 5),
-  };
-}
-
 function cleanCards(value: unknown): BandCard[] | null {
   if (!Array.isArray(value) || value.length === 0) return null;
   const cards: BandCard[] = [];
@@ -86,6 +79,9 @@ export default function PartyHost() {
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
+  const [hostUid, setHostUid] = useState<string | null>(null);
+  const [rooms, setRooms] = useState<string[]>([]);
+  const [ready, setReady] = useState(false);
   const [code, setCode] = useState<string | null>(null);
   const [room, setRoom] = useState<Room | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
@@ -93,9 +89,17 @@ export default function PartyHost() {
   const [now, setNow] = useState(0);
   const [settings, setSettings] = useState<RoomSettings>({ mode: "words", difficulty: "easy" });
   const [busy, setBusy] = useState(false);
+  const [creatingRoom, setCreatingRoom] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const roomRef = useRef<Room | null | undefined>(undefined);
   const endingRound = useRef<number | null>(null);
+  const syncedSettingsFor = useRef<string | null>(null);
+
+  const persistRooms = useCallback((nextRooms: string[], nextCode: string | null) => {
+    writeStorage(ROOMS_KEY, nextRooms.length > 0 ? JSON.stringify(nextRooms) : null);
+    writeStorage(ROOM_KEY, nextCode);
+  }, []);
 
   // A PIN entered earlier in this tab is re-checked silently.
   useEffect(() => {
@@ -110,32 +114,59 @@ export default function PartyHost() {
       .catch(() => {});
   }, [availability]);
 
-  // Sign in, then reuse this tab's room or create a new one.
+  // Sign in, then restore this tab's open rooms or create a fresh one.
   useEffect(() => {
     if (!pin) return;
     let active = true;
     (async () => {
       const uid = await ensureSignedIn();
-      const saved = readStorage(ROOM_KEY);
-      const existing = saved ? await getRoom(saved) : null;
-      const roomCode = existing && existing.hostUid === uid ? saved! : await createRoom(uid);
-      writeStorage(ROOM_KEY, roomCode);
-      if (active) setCode(roomCode);
+      const savedActive = readStorage(ROOM_KEY);
+      let candidates = parseRoomCodes(readStorage(ROOMS_KEY));
+      if (savedActive) candidates = addRoomCode(candidates, savedActive);
+
+      const checks = await Promise.all(
+        candidates.map(async (c) => ({ code: c, existing: await getRoom(c) })),
+      );
+      let valid = checks.filter((x) => x.existing && x.existing.hostUid === uid).map((x) => x.code);
+      let activeCode: string;
+      if (valid.length > 0) {
+        activeCode = savedActive && valid.includes(savedActive) ? savedActive : valid[0];
+      } else {
+        activeCode = await createRoom(uid);
+        valid = [activeCode];
+      }
+      persistRooms(valid, activeCode);
+      if (active) {
+        setHostUid(uid);
+        setRooms(valid);
+        setCode(activeCode);
+        setReady(true);
+      }
     })().catch((e) => {
       if (active) setError(errorText(e));
     });
     return () => {
       active = false;
     };
-  }, [pin]);
+  }, [pin, persistRooms]);
 
   useEffect(() => {
     if (!code) return;
     return subscribeRoom(code, (next) => {
       roomRef.current = next;
       setRoom(next);
+      if (next && syncedSettingsFor.current !== code) {
+        syncedSettingsFor.current = code;
+        setSettings(next.settings);
+      }
     });
   }, [code]);
+
+  useEffect(() => {
+    if (!confirmClose) return;
+    const id = window.setTimeout(() => setConfirmClose(false), 4_000);
+    return () => window.clearTimeout(id);
+  }, [confirmClose]);
 
   useEffect(() => {
     if (!code) return;
@@ -224,11 +255,81 @@ export default function PartyHost() {
     }
   };
 
+  const onSelectRoom = (nextCode: string) => {
+    if (nextCode === code) return;
+    endingRound.current = null;
+    syncedSettingsFor.current = null;
+    roomRef.current = undefined;
+    setRoom(undefined);
+    setConfirmClose(false);
+    setError(null);
+    writeStorage(ROOM_KEY, nextCode);
+    setCode(nextCode);
+  };
+
+  const onNewRoom = async () => {
+    setCreatingRoom(true);
+    setError(null);
+    try {
+      const uid = hostUid ?? (await ensureSignedIn());
+      setHostUid(uid);
+      const nextCode = await createRoom(uid);
+      const nextRooms = addRoomCode(rooms, nextCode);
+      persistRooms(nextRooms, nextCode);
+      endingRound.current = null;
+      syncedSettingsFor.current = null;
+      roomRef.current = undefined;
+      setRoom(undefined);
+      setConfirmClose(false);
+      setRooms(nextRooms);
+      setCode(nextCode);
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setCreatingRoom(false);
+    }
+  };
+
+  const onCloseRoom = async () => {
+    if (!code) return;
+    if (room?.status === "playing" && !confirmClose) {
+      setConfirmClose(true);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await closeRoom(code);
+      const nextRooms = removeRoomCode(rooms, code);
+      const nextCode = nextRooms[0] ?? null;
+      persistRooms(nextRooms, nextCode);
+      endingRound.current = null;
+      syncedSettingsFor.current = null;
+      roomRef.current = undefined;
+      setRoom(undefined);
+      setConfirmClose(false);
+      setRooms(nextRooms);
+      setCode(nextCode);
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onSettings = (next: RoomSettings) => {
+    setSettings(next);
+    if (code && room?.status === "lobby") {
+      updateRoomSettings(code, next).catch(() => {});
+    }
+  };
+
   const onStart = async () => {
     if (!code || !room) return;
     setBusy(true);
     setError(null);
     try {
+      endingRound.current = null;
       await startRound(code, room, settings);
     } catch (e) {
       setError(errorText(e));
@@ -278,7 +379,7 @@ export default function PartyHost() {
         </form>
       </div>
     );
-  else if (error && !room)
+  else if (error && !room && !ready)
     body = (
       <div className="overlay">
         <div className="card card-small">
@@ -287,11 +388,31 @@ export default function PartyHost() {
         </div>
       </div>
     );
-  else if (!code || room === undefined)
+  else if (!ready)
     body = (
       <div className="overlay">
         <div className="card card-small">
           <h2>Đang mở phòng…</h2>
+        </div>
+      </div>
+    );
+  else if (!code)
+    body = (
+      <div className="overlay">
+        <div className="card card-small">
+          <h2>Chưa có phòng nào đang mở</h2>
+          <p className="muted small">Tạo phòng mới để người chơi quét QR hoặc nhập mã vào chơi.</p>
+          <button type="button" className="btn primary big" disabled={creatingRoom} onClick={() => void onNewRoom()}>
+            {creatingRoom ? "Đang tạo…" : "+ Mở phòng mới"}
+          </button>
+        </div>
+      </div>
+    );
+  else if (room === undefined)
+    body = (
+      <div className="overlay">
+        <div className="card card-small">
+          <h2>Đang tải phòng {code}…</h2>
         </div>
       </div>
     );
@@ -300,16 +421,27 @@ export default function PartyHost() {
       <div className="overlay">
         <div className="card card-small">
           <h2>Phòng {code} không còn nữa</h2>
-          <button
-            type="button"
-            className="btn primary"
-            onClick={() => {
-              writeStorage(ROOM_KEY, null);
-              window.location.reload();
-            }}
-          >
-            Mở phòng mới
-          </button>
+          <div className="actions">
+            <button
+              type="button"
+              className="btn primary"
+              disabled={creatingRoom}
+              onClick={() => {
+                const rest = removeRoomCode(rooms, code);
+                if (rest.length > 0) {
+                  persistRooms(rest, rest[0]);
+                  setRooms(rest);
+                  onSelectRoom(rest[0]);
+                } else {
+                  persistRooms([], null);
+                  setRooms([]);
+                  void onNewRoom();
+                }
+              }}
+            >
+              {removeRoomCode(rooms, code).length > 0 ? "Chuyển phòng khác" : "Mở phòng mới"}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -321,7 +453,7 @@ export default function PartyHost() {
         qr={qr}
         settings={settings}
         busy={busy}
-        onSettings={setSettings}
+        onSettings={onSettings}
         onStart={onStart}
       />
     );
@@ -335,9 +467,41 @@ export default function PartyHost() {
         <div className="hud-brand">
           KEEP ME AWAY FROM <span className="accent">IELTS</span> · PARTY
         </div>
-        {code && (
-          <div className="party-host-room">
-            Phòng <strong>{code}</strong>
+        {pin && ready && (
+          <div className="party-host-controls">
+            {rooms.length > 0 && (
+              <nav className="party-room-tabs" aria-label="Danh sách phòng đang mở">
+                {rooms.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={`party-room-tab${c === code ? " active" : ""}`}
+                    aria-current={c === code ? "page" : undefined}
+                    onClick={() => onSelectRoom(c)}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </nav>
+            )}
+            <button
+              type="button"
+              className="btn btn-sm"
+              disabled={creatingRoom || busy || finishing}
+              onClick={() => void onNewRoom()}
+            >
+              {creatingRoom ? "Đang tạo…" : "+ Phòng mới"}
+            </button>
+            {code && room && (
+              <button
+                type="button"
+                className="btn btn-sm btn-danger"
+                disabled={busy || finishing}
+                onClick={() => void onCloseRoom()}
+              >
+                {confirmClose ? "Xác nhận đóng?" : "Đóng phòng"}
+              </button>
+            )}
           </div>
         )}
       </header>
