@@ -2,6 +2,7 @@
 
 // Phone view for party mode: join a room, wait in the lobby, play the round locally, see the result.
 // The game itself runs entirely on this phone; only the score, lives and alive flag go to Firebase.
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useReducer, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
@@ -277,7 +278,7 @@ export default function PartyPlayer() {
       type: "svg",
       margin: 1,
       errorCorrectionLevel: "M",
-      color: { dark: "#070b1a", light: "#ffffff" },
+      color: { dark: "#1e293b", light: "#ffffff" },
     })
       .then(setQr)
       .catch(() => setQr(""));
@@ -687,7 +688,10 @@ export default function PartyPlayer() {
   return (
     <div ref={rootRef} className="game party-phone">
       <header className="hud party-hud">
-        <div className="hud-brand">Keep Me Away From IELTS · Party</div>
+        <div className="hud-brand">
+          <Image src="/icons/mascot.png" alt="" width={28} height={28} className="brand-icon" unoptimized />
+          <span>Keep Me Away From IELTS · Party</span>
+        </div>
         {inRound && room?.status === "playing" ? (
           <dl className="hud-stats">
             <div>
@@ -792,9 +796,12 @@ function JoinForm(props: {
   return (
     <div className="overlay">
       <form className="card party-join" onSubmit={props.onSubmit}>
-        <h1 className="title">
-          Keep Me Away From <span className="accent">IELTS</span> · Party
-        </h1>
+        <div className="menu-hero">
+          <Image src="/icons/party.png" alt="" width={58} height={58} className="menu-hero-icon" unoptimized />
+          <h1 className="title">
+            Keep Me Away From <span className="accent">IELTS</span> · Party
+          </h1>
+        </div>
         <div className="segmented segmented-2 party-tabs" role="tablist" aria-label="Vào phòng hoặc tạo phòng">
           <button
             type="button"
@@ -1084,6 +1091,9 @@ function Ended(props: {
   const me = room.players[session.uid];
   return (
     <Notice title={rank === 1 ? "Bạn thắng rồi! 🏆" : rank > 0 ? `Bạn hạng ${rank}/${ranking.length}` : "Vòng vừa kết thúc"}>
+      {rank === 1 && (
+        <Image src="/icons/trophy.png" alt="" width={72} height={72} className="result-hero-icon" unoptimized />
+      )}
       {rank > 0 && me && <p className="final-score">{me.score.toLocaleString("vi-VN")}</p>}
       {card && (
         <div className="band-card">

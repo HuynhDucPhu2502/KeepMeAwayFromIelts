@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from "react";
 import wordsData from "@/data/words.json";
@@ -10,7 +11,6 @@ import {
   LIVES,
   RANDS_PER_TICK,
   WORDS_PER_MAP,
-  activePoolSize,
   buildPool,
   initialState,
   isBossMap,
@@ -74,10 +74,6 @@ export default function TypingGame() {
   const bestScores = useMemo(() => parseBest(bestRaw), [bestRaw]);
   const { status, mode, difficulty } = state;
   const best = bestScores[bestKey(mode, difficulty)] ?? 0;
-  const poolInfo = useMemo(() => {
-    const total = buildPool(mode, difficulty, WORDS, PHRASES).length;
-    return { total, start: activePoolSize(mode, difficulty, total, 1), perMap: DIFFICULTIES[difficulty][mode].perMap };
-  }, [mode, difficulty]);
 
   const start = useCallback(() => {
     dispatch({ type: "start", pool: buildPool(mode, difficulty, WORDS, PHRASES), best });
@@ -165,7 +161,10 @@ export default function TypingGame() {
   return (
     <div className="game">
       <header className={status === "menu" ? "hud hud-menu" : "hud"}>
-        <div className="hud-brand">Keep Me Away From IELTS</div>
+        <div className="hud-brand">
+          <Image src="/icons/mascot.png" alt="" width={30} height={30} className="brand-icon" unoptimized />
+          <span>Keep Me Away From IELTS</span>
+        </div>
         {status !== "menu" && (
           <>
             <dl className="hud-stats">
@@ -245,8 +244,6 @@ export default function TypingGame() {
             playTab={playTab}
             mode={mode}
             difficulty={difficulty}
-            best={best}
-            pool={poolInfo}
             showMeaning={showMeaning}
             onPlayTab={setPlayTab}
             onMode={(m) => dispatch({ type: "setMode", mode: m })}
@@ -291,8 +288,6 @@ function Menu(props: {
   playTab: "solo" | "party";
   mode: Mode;
   difficulty: Difficulty;
-  best: number;
-  pool: { total: number; start: number; perMap: number };
   showMeaning: boolean;
   onPlayTab: (tab: "solo" | "party") => void;
   onMode: (mode: Mode) => void;
@@ -303,9 +298,12 @@ function Menu(props: {
   return (
     <div className="overlay">
       <div className="card">
-        <h1 className="title">
-          Keep Me Away From <span className="accent">IELTS</span>
-        </h1>
+        <div className="menu-hero">
+          <Image src="/icons/mascot.png" alt="" width={62} height={62} className="menu-hero-icon" unoptimized />
+          <h1 className="title">
+            Keep Me Away From <span className="accent">IELTS</span>
+          </h1>
+        </div>
 
         <div className="segmented segmented-2" role="tablist" aria-label="Chọn chơi đơn hoặc chơi phòng">
           <button
@@ -315,7 +313,8 @@ function Menu(props: {
             className={props.playTab === "solo" ? "selected" : undefined}
             onClick={() => props.onPlayTab("solo")}
           >
-            Chơi đơn
+            <Image src="/icons/solo.png" alt="" width={22} height={22} className="tab-icon" unoptimized />
+            <span>Chơi đơn</span>
           </button>
           <button
             type="button"
@@ -324,7 +323,8 @@ function Menu(props: {
             className={props.playTab === "party" ? "selected" : undefined}
             onClick={() => props.onPlayTab("party")}
           >
-            Chơi phòng
+            <Image src="/icons/party.png" alt="" width={22} height={22} className="tab-icon" unoptimized />
+            <span>Chơi phòng</span>
           </button>
         </div>
 
@@ -383,18 +383,6 @@ function Menu(props: {
             <button type="button" className="btn primary big" onClick={props.onStart}>
               Bắt đầu <kbd>Enter</kbd>
             </button>
-
-            <p className="muted tiny">
-              {props.pool.start.toLocaleString("vi-VN")} {props.mode === "words" ? "từ" : "cụm"}
-              {props.pool.start < props.pool.total
-                ? ` lúc đầu, mỗi map thêm ${props.pool.perMap} (tối đa ${props.pool.total.toLocaleString("vi-VN")})`
-                : ""}{" "}
-              · Kỷ lục{" "}
-              <strong>{props.best.toLocaleString("vi-VN")}</strong> · <kbd>Esc</kbd> tạm dừng · Dữ liệu:{" "}
-              <a href="https://github.com/eugenewang5425/ielts-corpus-lab" target="_blank" rel="noreferrer">
-                IELTS Corpus Lab
-              </a>
-            </p>
           </>
         ) : (
           <>
@@ -405,7 +393,8 @@ function Menu(props: {
 
             <div className="menu-party-actions">
               <Link href="/party?tab=create" className="btn primary big">
-                Tạo phòng mới
+                <Image src="/icons/party.png" alt="" width={22} height={22} className="btn-icon" unoptimized />
+                <span>Tạo phòng mới</span>
               </Link>
               <Link href="/party" className="btn big">
                 Vào phòng bằng mã
@@ -436,6 +425,14 @@ function GameOver(props: {
   return (
     <div className="overlay">
       <div className="card">
+        <Image
+          src={newRecord ? "/icons/trophy.png" : "/icons/mascot.png"}
+          alt=""
+          width={72}
+          height={72}
+          className="result-hero-icon"
+          unoptimized
+        />
         <h2>{newRecord ? "Kỷ lục mới!" : "Hết mạng rồi"}</h2>
         <p className="final-score">{state.score.toLocaleString("vi-VN")}</p>
         <p className="muted small">

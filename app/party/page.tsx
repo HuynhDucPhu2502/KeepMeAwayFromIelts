@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#070b1a",
+  themeColor: "#faf6ee",
   // Android Chrome: shrink the page when the keyboard opens, so the typing box stays visible.
   interactiveWidget: "resizes-content",
 };

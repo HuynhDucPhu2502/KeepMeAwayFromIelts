@@ -2,6 +2,7 @@
 
 // Big-screen view for party mode: PIN, lobby with QR, live round board, results with band cards.
 // The host page is the only writer of room-level fields and runs the end-of-round check.
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import QRCode from "qrcode";
 import { DIFFICULTIES, LIVES, type Difficulty, type Mode } from "../game/engine";
@@ -202,7 +203,7 @@ export default function PartyHost() {
       type: "svg",
       margin: 1,
       errorCorrectionLevel: "M",
-      color: { dark: "#070b1a", light: "#ffffff" },
+      color: { dark: "#1e293b", light: "#ffffff" },
     })
       .then(setQr)
       .catch(() => setQr(""));
@@ -408,6 +409,7 @@ export default function PartyHost() {
     body = (
       <div className="overlay">
         <form className="card card-small" onSubmit={onPin}>
+          <Image src="/icons/party.png" alt="" width={68} height={68} className="result-hero-icon" unoptimized />
           <h1 className="title">
             Party <span className="accent">Host</span>
           </h1>
@@ -516,7 +518,10 @@ export default function PartyHost() {
     <div className="party-host">
       <header className="hud party-host-bar">
         <div className="hud-brand">
-          KEEP ME AWAY FROM <span className="accent">IELTS</span> · PARTY
+          <Image src="/icons/mascot.png" alt="" width={32} height={32} className="brand-icon" unoptimized />
+          <span>
+            KEEP ME AWAY FROM <span className="accent">IELTS</span> · PARTY
+          </span>
         </div>
         {pin && ready && (
           <div className="party-host-controls">
@@ -735,7 +740,8 @@ function HostResults({ room, busy, onLobby }: { room: Room; busy: boolean; onLob
   const winner = ranking[0] ? room.players[ranking[0]] : undefined;
   return (
     <div className="party-results">
-      <h2 className="party-winner">{winner ? `🏆 ${winner.name} thắng!` : "Vòng kết thúc"}</h2>
+      {winner && <Image src="/icons/trophy.png" alt="" width={78} height={78} className="result-hero-icon" unoptimized />}
+      <h2 className="party-winner">{winner ? `${winner.name} thắng!` : "Vòng kết thúc"}</h2>
       <ol className="party-cards">
         {ranking.slice(0, 3).map((uid, i) => {
           const p = room.players[uid];
