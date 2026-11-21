@@ -1,14 +1,14 @@
 // Pure Writing Sprint engine tests. Run with `npm test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { WRITING_CHALLENGES, WRITING_EXERCISES } from "../app/writing/writing-data.ts";
+import { WRITING_CHALLENGES, WRITING_EXERCISES } from "../src/lib/writing/writing-data.ts";
 import {
   buildWritingDeck,
   estimateWritingBand,
   isOrderCorrect,
   prepareChallenge,
   scoreWritingAnswer,
-} from "../app/writing/writing-engine.ts";
+} from "../src/lib/writing/writing-engine.ts";
 
 test("all writing challenges reference valid exercises and valid answer indices", () => {
   assert.ok(WRITING_CHALLENGES.length >= 30);

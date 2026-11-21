@@ -1,7 +1,7 @@
 // Band-card prompt, parsing and template fallback for the end-of-round report. Run with `npm test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { BANDS, buildReportPrompt, cleanReportPlayers, fallbackCards, parseCards } from "../app/party/report-core.ts";
+import { BANDS, buildReportPrompt, cleanReportPlayers, fallbackCards, parseCards } from "../src/lib/party/report-core.ts";
 
 const PLAYERS = [
   { uid: "u1", name: "Minh", score: 1240, map: 6, accuracy: 96, wpm: 38, missed: ["environment"] },

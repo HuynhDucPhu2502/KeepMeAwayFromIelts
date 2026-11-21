@@ -10,8 +10,8 @@ import {
   filterScramblePool,
   scramblePoints,
   scrambleWord,
-} from "../app/arcade/arcade-logic.ts";
-import { SPEAKING_CLOZE, SPEAKING_CUE_CARDS } from "../app/speaking/speaking-data.ts";
+} from "../src/lib/arcade-logic.ts";
+import { SPEAKING_CLOZE, SPEAKING_CUE_CARDS } from "../src/lib/speaking/speaking-data.ts";
 
 const SAMPLE_WORDS = [
   { text: "apple", meaning: "quả táo" },

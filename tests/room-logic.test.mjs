@@ -25,7 +25,7 @@ import {
   shouldCloseEmptyRoom,
   shouldEnd,
   shouldEnroll,
-} from "../app/party/room-logic.ts";
+} from "../src/lib/party/room-logic.ts";
 
 const START = 1_000_000;
 

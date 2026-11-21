@@ -11,7 +11,7 @@ import {
   partyPool,
   reducer,
   seededRandom,
-} from "../app/game/engine.ts";
+} from "../src/lib/typing-engine.ts";
 
 const WORDS = JSON.parse(readFileSync(new URL("../data/words.json", import.meta.url), "utf8"));
 const PHRASES = JSON.parse(readFileSync(new URL("../data/phrases.json", import.meta.url), "utf8"));
