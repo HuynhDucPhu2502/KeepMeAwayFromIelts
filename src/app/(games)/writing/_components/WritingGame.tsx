@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { SoundToggle } from "@/components/SoundToggle";
+import { playError, playGameOver, playKey, playSuccess } from "@/lib/sfx";
 import { ChartVisual } from "./ChartVisual";
 import { WRITING_CHALLENGES, WRITING_EXERCISES } from "@/lib/writing/writing-data";
 import {
@@ -179,7 +181,12 @@ export default function WritingGame() {
       setCombo(res.nextCombo);
       if (res.nextCombo > maxCombo) setMaxCombo(res.nextCombo);
       setLives(nextLives);
-      if (ok) setCorrectCount((c) => c + 1);
+      if (ok) {
+        playSuccess(res.nextCombo);
+        setCorrectCount((c) => c + 1);
+      } else {
+        playError();
+      }
       setTakeaways((prev) => (prev.includes(takeaway) ? prev : [...prev, takeaway]));
       setFeedback({ ok, points: res.points, speedBonus: res.speedBonus, pickedChoice });
       if (nextLives === 0 || index + 1 >= deck.length) {
@@ -206,6 +213,7 @@ export default function WritingGame() {
         return;
       }
       const next = [...orderPick, origStepIdx];
+      playKey();
       setOrderPick(next);
       if (next.length === current.steps.length) {
         const ok = isOrderCorrect(next, current.steps.length);
@@ -219,6 +227,7 @@ export default function WritingGame() {
     if (!feedback) return;
     if (lives <= 0 || index + 1 >= deck.length) {
       saveBestIfHigher(score);
+      playGameOver(lives > 0);
       setPhase("done");
       return;
     }
@@ -304,11 +313,15 @@ export default function WritingGame() {
                 </dd>
               </div>
             </dl>
-            <button type="button" className="hud-pause" onClick={() => setPhase("menu")}>
-              Về menu
-            </button>
+            <div className="hud-actions">
+              <SoundToggle />
+              <button type="button" className="hud-pause" onClick={() => setPhase("menu")}>
+                Về menu
+              </button>
+            </div>
           </>
         )}
+        {phase === "menu" && <SoundToggle />}
       </header>
 
       <main className="field ws-field">

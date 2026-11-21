@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { SoundToggle } from "@/components/SoundToggle";
+import { playError, playGameOver, playKey, playSuccess } from "@/lib/sfx";
 import { WORDS } from "@/lib/vocab";
 import { DIFFICULTIES, type Difficulty, type Entry } from "@/lib/typing-engine";
 import {
@@ -77,10 +79,12 @@ export default function ScrambleGame() {
         const pts = scramblePoints(entry.text.length, nextCombo, currentHints);
         setCombo(nextCombo);
         if (nextCombo > maxCombo) setMaxCombo(nextCombo);
+        playSuccess(nextCombo);
         setScore((s) => s + pts);
         setSolved((c) => c + 1);
         setStatusMsg({ ok: true, text: `Tuyệt vời! “${entry.text}” (+${pts} điểm)` });
       } else {
+        playError();
         const nextLives = Math.max(0, lives - 1);
         setCombo(0);
         setLives(nextLives);
@@ -93,6 +97,7 @@ export default function ScrambleGame() {
   const onPickTile = useCallback(
     (tileId: number) => {
       if (!current || statusMsg || pickedIds.includes(tileId)) return;
+      playKey();
       const next = [...pickedIds, tileId];
       setPickedIds(next);
       checkComplete(next, current, tiles, hintsUsed);
@@ -133,8 +138,10 @@ export default function ScrambleGame() {
 
   const onNext = useCallback(() => {
     if (!current) return;
-    if (lives <= 0) setPhase("done");
-    else loadWord(current.text);
+    if (lives <= 0) {
+      playGameOver(false);
+      setPhase("done");
+    } else loadWord(current.text);
   }, [current, lives, loadWord]);
 
   // Direct keyboard typing & Backspace / Enter support!
@@ -204,11 +211,15 @@ export default function ScrambleGame() {
                 </dd>
               </div>
             </dl>
-            <button type="button" className="hud-pause" onClick={() => setPhase("menu")}>
-              Về menu
-            </button>
+            <div className="hud-actions">
+              <SoundToggle />
+              <button type="button" className="hud-pause" onClick={() => setPhase("menu")}>
+                Về menu
+              </button>
+            </div>
           </>
         )}
+        {phase === "menu" && <SoundToggle />}
       </header>
 
       <main className="field ws-field">

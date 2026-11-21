@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { SoundToggle } from "@/components/SoundToggle";
+import { playError, playFever, playGameOver, playSuccess, playTick } from "@/lib/sfx";
 import { WORDS } from "@/lib/vocab";
 import { DIFFICULTIES, type Difficulty } from "@/lib/typing-engine";
 import {
@@ -66,9 +68,11 @@ export default function BlitzGame() {
     const id = window.setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
+          playGameOver(true);
           setPhase("done");
           return 0;
         }
+        if (t <= 6) playTick();
         return t - 1;
       });
     }, 1000);
@@ -83,6 +87,8 @@ export default function BlitzGame() {
       if (ok) {
         const nextStreak = streak + 1;
         const { points, bonusSec } = blitzReward(nextStreak);
+        if (nextStreak === 5 || bonusSec > 0) playFever();
+        else playSuccess(nextStreak);
         setStreak(nextStreak);
         if (nextStreak > maxStreak) setMaxStreak(nextStreak);
         setScore((s) => s + points);
@@ -90,6 +96,7 @@ export default function BlitzGame() {
         if (bonusSec > 0) setTimeLeft((t) => t + bonusSec);
         setFlash({ idx, ok: true, bonusSec });
       } else {
+        playError();
         setStreak(0);
         setFlash({ idx, ok: false, bonusSec: 0 });
       }
@@ -148,11 +155,15 @@ export default function BlitzGame() {
                 <dd className={timeLeft <= 10 ? "boss-map" : undefined}>{timeLeft}s</dd>
               </div>
             </dl>
-            <button type="button" className="hud-pause" onClick={() => setPhase("menu")}>
-              Về menu
-            </button>
+            <div className="hud-actions">
+              <SoundToggle />
+              <button type="button" className="hud-pause" onClick={() => setPhase("menu")}>
+                Về menu
+              </button>
+            </div>
           </>
         )}
+        {phase === "menu" && <SoundToggle />}
       </header>
 
       <main className="field ws-field">

@@ -196,3 +196,233 @@
 .cue-kw.hit strong {
   color: #15803d;
 }
+
+
+/* ---------------------------------------------------------------- */
+/* Web Audio Sound Toggle (Header HUD)                              */
+/* ---------------------------------------------------------------- */
+.hud-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.hud-sfx {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border: 1.5px solid var(--line);
+  border-bottom-width: 2.5px;
+  border-radius: 10px;
+  background: #faf6ee;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.hud-sfx.on {
+  color: var(--text);
+  background: #ffffff;
+}
+
+.hud-sfx:hover {
+  border-color: #cfc4b0;
+}
+
+/* ---------------------------------------------------------------- */
+/* Game #7: Reading Sniper (True / False / Not Given)               */
+/* ---------------------------------------------------------------- */
+.rd-card {
+  max-width: 780px;
+  gap: 16px;
+}
+
+.rd-diff-pill {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #f5efe2;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rd-timer-bar {
+  flex: 1;
+  min-width: 90px;
+  height: 8px;
+  border-radius: 999px;
+  background: #efe7d6;
+  overflow: hidden;
+}
+
+.rd-timer-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0ea5e9, #10b981);
+  transition: width 0.4s linear, background 0.2s;
+}
+
+.rd-timer-bar > span.urgent {
+  background: linear-gradient(90deg, #f97316, #ef4444);
+}
+
+.rd-passage {
+  padding: 18px 20px;
+  border: 1.5px solid var(--line);
+  border-left: 4px solid var(--target);
+  border-radius: 14px;
+  background: #fcfaf5;
+  font-size: 16px;
+  line-height: 1.72;
+  color: var(--text);
+}
+
+.rd-mark {
+  padding: 1px 4px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.rd-mark-true {
+  background: #bbf7d0;
+  box-shadow: 0 0 0 1px #4ade80;
+}
+
+.rd-mark-false {
+  background: #fecaca;
+  box-shadow: 0 0 0 1px #f87171;
+}
+
+.rd-mark-ng {
+  background: #fef08a;
+  border-bottom: 2px dashed #d97706;
+}
+
+.rd-statement {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 2px solid #fed7aa;
+  background: #fff7ed;
+}
+
+.rd-statement-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-dark);
+}
+
+.rd-statement p {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.48;
+  color: var(--text);
+}
+
+.rd-verdicts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.rd-verdict-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 13px 14px;
+  border: 2px solid var(--line);
+  border-bottom-width: 4px;
+  border-radius: 14px;
+  background: #ffffff;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.08s, border-color 0.14s, background 0.14s;
+}
+
+.rd-verdict-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: #cbd5e1;
+  background: #fcfaf5;
+}
+
+.rd-verdict-btn:disabled {
+  cursor: default;
+}
+
+.rd-verdict-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.rd-verdict-top strong {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.rd-btn-true .rd-verdict-top strong {
+  color: #15803d;
+}
+
+.rd-btn-false .rd-verdict-top strong {
+  color: #dc2626;
+}
+
+.rd-btn-ng .rd-verdict-top strong {
+  color: #b45309;
+}
+
+.rd-verdict-sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.rd-verdict-btn.correct {
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.rd-verdict-btn.wrong {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.rd-trap-badge {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+@media (max-width: 640px) {
+  .hud-sfx-label {
+    display: none;
+  }
+  .rd-verdicts {
+    grid-template-columns: 1fr;
+  }
+  .rd-passage {
+    padding: 14px;
+    font-size: 15px;
+  }
+}

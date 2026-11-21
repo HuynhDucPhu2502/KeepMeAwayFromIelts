@@ -23,6 +23,8 @@ import {
   type Mode,
 } from "@/lib/typing-engine";
 import { Lane } from "@/components/Lane";
+import { SoundToggle } from "@/components/SoundToggle";
+import { playBossDefeat, playError, playGameOver, playHeart, playKey, playSuccess } from "@/lib/sfx";
 
 const MODES: Record<Mode, { label: string; detail: string }> = {
   words: { label: "Từ đơn", detail: `${WORDS.length.toLocaleString("vi-VN")} từ hay gặp nhất trong đề IELTS` },
@@ -110,6 +112,33 @@ export default function TypingGame() {
     saveScore(bestKey(state.mode, state.difficulty), state.score);
   }, [status, state.mode, state.difficulty, state.score, saveScore]);
 
+  // Web Audio SFX triggers based on engine state transitions.
+  const prevSfx = useRef({
+    cleared: state.cleared,
+    lives: state.lives,
+    bosses: state.bossesDefeated,
+    errors: state.errorTick,
+    status: state.status,
+  });
+  useEffect(() => {
+    const p = prevSfx.current;
+    if (state.status === "playing") {
+      if (state.bossesDefeated > p.bosses) playBossDefeat();
+      else if (state.lives > p.lives && p.status === "playing") playHeart();
+      else if (state.cleared > p.cleared) playSuccess(state.combo);
+      else if (state.lives < p.lives || state.errorTick > p.errors) playError();
+    } else if (state.status === "over" && p.status === "playing") {
+      playGameOver(false);
+    }
+    prevSfx.current = {
+      cleared: state.cleared,
+      lives: state.lives,
+      bosses: state.bossesDefeated,
+      errors: state.errorTick,
+      status: state.status,
+    };
+  }, [state.cleared, state.lives, state.bossesDefeated, state.errorTick, state.status, state.combo]);
+
   // Keyboard shortcuts: Escape pauses/resumes; Enter starts/continues/resumes.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -181,16 +210,20 @@ export default function TypingGame() {
                 </dd>
               </div>
             </dl>
-            <button
-              type="button"
-              className="hud-pause"
-              onClick={() => dispatch({ type: status === "paused" ? "resume" : "pause" })}
-              disabled={status !== "playing" && status !== "paused"}
-            >
-              {status === "paused" ? "Tiếp tục" : "Tạm dừng"}
-            </button>
+            <div className="hud-actions">
+              <SoundToggle />
+              <button
+                type="button"
+                className="hud-pause"
+                onClick={() => dispatch({ type: status === "paused" ? "resume" : "pause" })}
+                disabled={status !== "playing" && status !== "paused"}
+              >
+                {status === "paused" ? "Tiếp tục" : "Tạm dừng"}
+              </button>
+            </div>
           </>
         )}
+        {status === "menu" && <SoundToggle />}
       </header>
 
       <main className="field">
@@ -207,7 +240,10 @@ export default function TypingGame() {
               ref={inputRef}
               className="type-input"
               value={state.typed}
-              onChange={(e) => dispatch({ type: "input", value: e.target.value })}
+              onChange={(e) => {
+                if (e.target.value.length > state.typed.length) playKey();
+                dispatch({ type: "input", value: e.target.value });
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();

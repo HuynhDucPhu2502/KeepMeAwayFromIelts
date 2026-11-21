@@ -7,10 +7,23 @@ import { useEffect, useState } from "react";
 import { BOSS_EVERY, DIFFICULTIES, LIVES, type Difficulty, type Mode } from "@/lib/typing-engine";
 import { HUB_GAMES, VOCAB_COUNTS, type HubGameId } from "@/lib/games-registry";
 import {
+  READING_ROUND_COUNTS,
+  READING_TIME_LIMITS,
+  type ReadingDifficultyFilter,
+  type ReadingRoundCount,
+} from "@/lib/reading/reading-engine";
+import {
   WRITING_ROUND_COUNTS,
   type WritingMode,
   type WritingRoundCount,
 } from "@/lib/writing/writing-engine";
+
+const READING_DIFFS: { id: ReadingDifficultyFilter; label: string }[] = [
+  { id: "all", label: "Tổng hợp" },
+  { id: "easy", label: "Dễ" },
+  { id: "normal", label: "Vừa" },
+  { id: "hard", label: "Khó" },
+];
 
 const MODES: Record<Mode, { label: string; detail: string }> = {
   words: { label: "Từ đơn", detail: `${VOCAB_COUNTS.words.toLocaleString("vi-VN")} từ hay gặp nhất trong đề IELTS` },
@@ -30,6 +43,9 @@ export default function GameHub() {
   const [mode, setMode] = useState<Mode>("words");
   const [difficulty, setDifficulty] = useState<Difficulty>("easy");
   const [showMeaning, setShowMeaning] = useState(true);
+  const [readingDiff, setReadingDiff] = useState<ReadingDifficultyFilter>("all");
+  const [readingCount, setReadingCount] = useState<ReadingRoundCount>(10);
+  const [readingTimed, setReadingTimed] = useState(true);
   const [writingMode, setWritingMode] = useState<WritingMode>("task1");
   const [writingCount, setWritingCount] = useState<WritingRoundCount>(10);
   const [listenSource, setListenSource] = useState<"words" | "phrases">("words");
@@ -220,6 +236,67 @@ export default function GameHub() {
                   </p>
                 </>
               )}
+            </>
+          )}
+
+          {playTab === "reading" && (
+            <>
+              <div className="hub-settings-head">
+                <h2>Reading Sniper · True / False / Not Given</h2>
+                <p className="muted small">
+                  24 đoạn văn học thuật IELTS với các bẫy kinh điển — trả lời xong tự động highlight câu dẫn chứng ngay
+                  trong đoạn văn để không bao giờ nhầm False với Not Given!
+                </p>
+              </div>
+
+              <fieldset className="choice">
+                <legend>Độ khó</legend>
+                <div className="segmented">
+                  {READING_DIFFS.map((d) => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      className={d.id === readingDiff ? "selected" : undefined}
+                      onClick={() => setReadingDiff(d.id)}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <fieldset className="choice">
+                <legend>Độ dài lượt chơi</legend>
+                <div className="segmented">
+                  {READING_ROUND_COUNTS.map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      className={n === readingCount ? "selected" : undefined}
+                      onClick={() => setReadingCount(n)}
+                    >
+                      {n} câu
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={readingTimed}
+                  onChange={(e) => setReadingTimed(e.target.checked)}
+                />
+                <span>Bật đồng hồ áp lực ({READING_TIME_LIMITS[readingDiff]} giây / câu)</span>
+              </label>
+
+              <Link
+                href={`/reading?difficulty=${readingDiff}&count=${readingCount}&timed=${readingTimed ? "1" : "0"}&autostart=1`}
+                className="btn primary big hub-cta"
+              >
+                <Image src="/icons/reading.png" alt="" width={22} height={22} className="btn-icon" unoptimized />
+                <span>Bắt đầu Reading →</span>
+              </Link>
             </>
           )}
 

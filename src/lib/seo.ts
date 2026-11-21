@@ -3,13 +3,14 @@ import type { Metadata } from "next";
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://keepmeawayfromielts.vnftgroup.com").replace(/\/+$/, "");
 export const SITE_NAME = "Keep Me Away From IELTS";
 export const SITE_DESCRIPTION =
-  "Kho 6 mini-game học IELTS miễn phí: Gõ từ rơi (Chơi đơn & Đấu phòng 30 người), Writing Sprint (8 biểu đồ Task 1 & 6 dạng luận Task 2), Nghe & Gõ UK/US, Nối Nghĩa Tốc Độ, Xếp Chữ IELTS và Phản Xạ Speaking.";
+  "Kho 7 mini-game học IELTS miễn phí đủ 4 kỹ năng: Gõ từ rơi (Chơi đơn & Đấu phòng 30 người), Reading Sniper (True/False/Not Given), Writing Sprint (Task 1 & 2), Nghe & Gõ UK/US, Nối Nghĩa Tốc Độ, Xếp Chữ IELTS và Phản Xạ Speaking.";
 
 export const DEFAULT_KEYWORDS = [
   "Keep Me Away From IELTS",
   "game học IELTS",
   "học từ vựng IELTS",
   "luyện gõ tiếng Anh IELTS",
+  "IELTS Reading True False Not Given",
   "IELTS Writing Task 1 Task 2",
   "IELTS Listening chính tả",
   "IELTS Speaking Part 1 2 3",

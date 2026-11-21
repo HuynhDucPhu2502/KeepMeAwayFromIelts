@@ -17,7 +17,7 @@ const mono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — Kho 6 Mini-Game Học IELTS Miễn Phí`,
+    default: `${SITE_NAME} — Kho 7 Mini-Game Học IELTS Miễn Phí`,
     template: `%s · ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
@@ -88,6 +88,7 @@ const JSON_LD = {
   featureList: [
     "Gõ từ rơi IELTS (5.785 từ & 307 cụm từ)",
     "Đấu phòng Party Battle Royale 2–30 người",
+    "Reading Sniper: 24 bài True / False / Not Given kèm highlight dẫn chứng",
     "Writing Sprint: 8 dạng biểu đồ Task 1 & 6 dạng luận Task 2",
     "Nghe & Gõ chính tả giọng UK/US",
     "Nối Nghĩa Tốc Độ 60s Fever Mode",

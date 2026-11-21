@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { SoundToggle } from "@/components/SoundToggle";
+import { playError, playGameOver, playKey, playSuccess, playTick } from "@/lib/sfx";
 import {
   SPEAKING_CLOZE,
   SPEAKING_CUE_CARDS,
@@ -99,10 +101,12 @@ export default function SpeakingGame() {
     const id = window.setInterval(() => {
       setCueSec((s) => {
         if (s <= 1) {
+          playGameOver(true);
           setCueRunning(false);
           setShowSample(true);
           return 0;
         }
+        if (s <= 6) playTick();
         return s - 1;
       });
     }, 1000);
@@ -125,11 +129,13 @@ export default function SpeakingGame() {
       if (ok) {
         const nextCombo = combo + 1;
         const pts = 100 * Math.min(5, nextCombo);
+        playSuccess(nextCombo);
         setCombo(nextCombo);
         setScore((s) => s + pts);
         setCorrect((c) => c + 1);
         setFeedback({ ok: true, picked: choiceIdx, pts });
       } else {
+        playError();
         setCombo(0);
         setLives((l) => Math.max(0, l - 1));
         setFeedback({ ok: false, picked: choiceIdx, pts: 0 });
@@ -140,6 +146,7 @@ export default function SpeakingGame() {
 
   const onNextCloze = useCallback(() => {
     if (lives <= 0 || idx + 1 >= deck.length) {
+      playGameOver(lives > 0);
       setPhase("done");
       return;
     }
@@ -148,6 +155,7 @@ export default function SpeakingGame() {
   }, [lives, idx, deck.length]);
 
   const onToggleKeyword = (word: string) => {
+    playKey();
     if (usedKeywords.includes(word)) {
       setUsedKeywords((prev) => prev.filter((w) => w !== word));
       setScore((s) => Math.max(0, s - 100));
@@ -243,11 +251,15 @@ export default function SpeakingGame() {
                 </>
               )}
             </dl>
-            <button type="button" className="hud-pause" onClick={() => setPhase("menu")}>
-              Về menu
-            </button>
+            <div className="hud-actions">
+              <SoundToggle />
+              <button type="button" className="hud-pause" onClick={() => setPhase("menu")}>
+                Về menu
+              </button>
+            </div>
           </>
         )}
+        {phase === "menu" && <SoundToggle />}
       </header>
 
       <main className="field ws-field">

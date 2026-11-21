@@ -22,6 +22,8 @@ import {
   type Mode,
 } from "@/lib/typing-engine";
 import { Lane } from "@/components/Lane";
+import { SoundToggle } from "@/components/SoundToggle";
+import { playBossDefeat, playError, playGameOver, playHeart, playKey, playSuccess } from "@/lib/sfx";
 import {
   DEFAULT_ROUND_MINUTES,
   DISCONNECT_GRACE_MS,
@@ -584,6 +586,32 @@ export default function PartyPlayer() {
     navigator.clipboard?.writeText(url).then(() => setCopied(true)).catch(() => {});
   };
 
+  const prevSfx = useRef({
+    cleared: engine.cleared,
+    lives: engine.lives,
+    bosses: engine.bossesDefeated,
+    errors: engine.errorTick,
+    status: engine.status,
+  });
+  useEffect(() => {
+    const p = prevSfx.current;
+    if (engine.status === "playing") {
+      if (engine.bossesDefeated > p.bosses) playBossDefeat();
+      else if (engine.lives > p.lives && p.status === "playing") playHeart();
+      else if (engine.cleared > p.cleared) playSuccess(engine.combo);
+      else if (engine.lives < p.lives || engine.errorTick > p.errors) playError();
+    } else if (engine.status === "over" && p.status === "playing") {
+      playGameOver(false);
+    }
+    prevSfx.current = {
+      cleared: engine.cleared,
+      lives: engine.lives,
+      bosses: engine.bossesDefeated,
+      errors: engine.errorTick,
+      status: engine.status,
+    };
+  }, [engine.cleared, engine.lives, engine.bossesDefeated, engine.errorTick, engine.status, engine.combo]);
+
   const pending = running ? pendingExact(engine) : undefined;
   const shake = engine.errorTick === 0 ? "" : engine.errorTick % 2 ? "shake-a" : "shake-b";
   const total = room ? participants(room).length : 0;
@@ -734,6 +762,7 @@ export default function PartyPlayer() {
         ) : (
           <span className="muted small party-hud-note">{session ? `Phòng ${session.code} · ${session.name}` : "Party"}</span>
         )}
+        <SoundToggle />
       </header>
 
       <main className="field">
@@ -750,7 +779,10 @@ export default function PartyPlayer() {
               ref={inputRef}
               className="type-input"
               value={engine.typed}
-              onChange={(e) => dispatch({ type: "input", value: e.target.value })}
+              onChange={(e) => {
+                if (e.target.value.length > engine.typed.length) playKey();
+                dispatch({ type: "input", value: e.target.value });
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();

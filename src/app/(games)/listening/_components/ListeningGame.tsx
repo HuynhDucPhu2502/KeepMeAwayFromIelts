@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { SoundToggle } from "@/components/SoundToggle";
+import { playError, playGameOver, playSuccess } from "@/lib/sfx";
 import { PHRASES, WORDS } from "@/lib/vocab";
 import { DIFFICULTIES, type Difficulty, type Entry } from "@/lib/typing-engine";
 import { compareSpelling, filterListeningPool, type DiffChar } from "@/lib/arcade-logic";
@@ -104,8 +106,10 @@ export default function ListeningGame() {
     e.preventDefault();
     if (!current) return;
     if (result) {
-      if (lives <= 0) setPhase("done");
-      else pickNext(current.text);
+      if (lives <= 0) {
+        playGameOver(false);
+        setPhase("done");
+      } else pickNext(current.text);
       return;
     }
     if (!typed.trim()) return;
@@ -113,12 +117,14 @@ export default function ListeningGame() {
     if (cmp.exact) {
       const nextCombo = combo + 1;
       const pts = 100 * Math.min(5, nextCombo);
+      playSuccess(nextCombo);
       setCombo(nextCombo);
       if (nextCombo > maxCombo) setMaxCombo(nextCombo);
       setScore((s) => s + pts);
       setCleared((c) => c + 1);
       setResult({ ...cmp, points: pts });
     } else {
+      playError();
       setCombo(0);
       setLives((l) => Math.max(0, l - 1));
       setResult({ ...cmp, points: 0 });
@@ -163,11 +169,15 @@ export default function ListeningGame() {
                 </dd>
               </div>
             </dl>
-            <button type="button" className="hud-pause" onClick={() => setPhase("menu")}>
-              Về menu
-            </button>
+            <div className="hud-actions">
+              <SoundToggle />
+              <button type="button" className="hud-pause" onClick={() => setPhase("menu")}>
+                Về menu
+              </button>
+            </div>
           </>
         )}
+        {phase === "menu" && <SoundToggle />}
       </header>
 
       <main className="field ws-field">

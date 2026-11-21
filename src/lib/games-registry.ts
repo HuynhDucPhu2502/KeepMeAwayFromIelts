@@ -1,4 +1,4 @@
-export type HubGameId = "typing" | "writing" | "listening" | "blitz" | "scramble" | "speaking";
+export type HubGameId = "typing" | "reading" | "writing" | "listening" | "blitz" | "scramble" | "speaking";
 
 export interface HubGameMeta {
   id: HubGameId;
@@ -19,6 +19,15 @@ export const HUB_GAMES: HubGameMeta[] = [
     subtitle: "Chơi đơn hoặc Đấu phòng 2–30 người · Boss mỗi 5 map",
     badge: "Vocab · Party",
     priority: 0.95,
+  },
+  {
+    id: "reading",
+    path: "/reading",
+    icon: "/icons/reading.png",
+    title: "Reading Sniper",
+    subtitle: "Bắt bẫy True / False / Not Given · Highlight dẫn chứng",
+    badge: "Reading",
+    priority: 0.92,
   },
   {
     id: "writing",
