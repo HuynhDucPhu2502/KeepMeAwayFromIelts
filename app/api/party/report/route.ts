@@ -12,7 +12,8 @@ async function geminiCards(players: ReportPlayer[]) {
     location: process.env.GOOGLE_CLOUD_LOCATION ?? "global",
   });
   const call = ai.models.generateContent({
-    model: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
+    // gemini-2.5-flash is no longer served to new projects (Nov 2026); 3.8 Flash is the current GA Flash.
+    model: process.env.GEMINI_MODEL ?? "gemini-3.8-flash",
     contents: buildReportPrompt(players),
     config: {
       responseMimeType: "application/json",
