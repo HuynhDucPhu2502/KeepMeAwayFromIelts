@@ -75,11 +75,12 @@ function parseBest(raw: string): Record<string, number> {
 
 const bestKey = (mode: Mode, difficulty: Difficulty) => `${mode}:${difficulty}`;
 
-type HubGameId = "solo" | "party" | "writing" | "listening" | "blitz" | "scramble" | "speaking";
+type HubGameId = "typing" | "writing" | "listening" | "blitz" | "scramble" | "speaking";
 
 export default function TypingGame() {
   const [state, dispatch] = useReducer(reducer, undefined, () => initialState());
-  const [playTab, setPlayTab] = useState<HubGameId>("solo");
+  const [playTab, setPlayTab] = useState<HubGameId>("typing");
+  const [typingPlayMode, setTypingPlayMode] = useState<"solo" | "party">("solo");
   const [showMeaning, setShowMeaning] = useState(true);
   const [writingMode, setWritingMode] = useState<WritingMode>("task1");
   const [writingCount, setWritingCount] = useState<WritingRoundCount>(10);
@@ -161,7 +162,7 @@ export default function TypingGame() {
         dispatch({ type: status === "playing" ? "pause" : "resume" });
       } else if (status === "menu" || status === "over") {
         if (event.key !== "Enter") return;
-        if (status === "menu" && playTab !== "solo") return;
+        if (status === "menu" && (playTab !== "typing" || typingPlayMode !== "solo")) return;
         // Ignore an Enter that was meant for the last word of the finished run.
         if (status === "over" && performance.now() - overAt.current < 900) return;
         event.preventDefault();
@@ -174,7 +175,7 @@ export default function TypingGame() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [status, playTab, start]);
+  }, [status, playTab, typingPlayMode, start]);
 
   const pending = pendingExact(state);
   const { wpm, accuracy } = stats(state);
@@ -265,6 +266,7 @@ export default function TypingGame() {
         {status === "menu" && (
           <Menu
             playTab={playTab}
+            typingPlayMode={typingPlayMode}
             mode={mode}
             difficulty={difficulty}
             showMeaning={showMeaning}
@@ -279,6 +281,7 @@ export default function TypingGame() {
             scrambleDiff={scrambleDiff}
             speakingMode={speakingMode}
             onPlayTab={setPlayTab}
+            onTypingPlayMode={setTypingPlayMode}
             onMode={(m) => dispatch({ type: "setMode", mode: m })}
             onDifficulty={(d) => dispatch({ type: "setDifficulty", difficulty: d })}
             onToggleMeaning={setShowMeaning}
@@ -329,6 +332,7 @@ export default function TypingGame() {
 
 function Menu(props: {
   playTab: HubGameId;
+  typingPlayMode: "solo" | "party";
   mode: Mode;
   difficulty: Difficulty;
   showMeaning: boolean;
@@ -343,6 +347,7 @@ function Menu(props: {
   scrambleDiff: Difficulty;
   speakingMode: "cloze" | "cuecard";
   onPlayTab: (tab: HubGameId) => void;
+  onTypingPlayMode: (m: "solo" | "party") => void;
   onMode: (mode: Mode) => void;
   onDifficulty: (difficulty: Difficulty) => void;
   onToggleMeaning: (show: boolean) => void;
@@ -360,18 +365,11 @@ function Menu(props: {
 }) {
   const games: { id: HubGameId; icon: string; title: string; subtitle: string; badge: string }[] = [
     {
-      id: "solo",
+      id: "typing",
       icon: "/icons/solo.png",
       title: "Gõ từ rơi",
-      subtitle: "5.785 từ & 307 cụm · Có Boss mỗi 5 map",
-      badge: "Vocab",
-    },
-    {
-      id: "party",
-      icon: "/icons/party.png",
-      title: "Đấu phòng (Party)",
-      subtitle: "2–30 người · Quét QR · Sinh tồn",
-      badge: "Party",
+      subtitle: "Chơi đơn hoặc Đấu phòng 2–30 người · Boss mỗi 5 map",
+      badge: "Vocab · Party",
     },
     {
       id: "writing",
@@ -457,100 +455,122 @@ function Menu(props: {
 
         {/* Right: Settings panel for the selected game */}
         <section className="hub-settings" aria-label="Cài đặt trò chơi">
-          {props.playTab === "solo" && (
+          {props.playTab === "typing" && (
             <>
               <div className="hub-settings-head">
-                <h2>Gõ từ rơi · Chơi đơn</h2>
-                <p className="muted small">
-                  Gõ các từ IELTS trước khi chạm đất, để rơi {LIVES} từ là thua. Cứ {BOSS_EVERY} map có một boss. Chữ
-                  hồng có <span className="heart">♥</span> cho thêm 1 mạng.
-                </p>
-              </div>
-
-              <fieldset className="choice">
-                <legend>Chế độ</legend>
-                <div className="mode-grid">
-                  {(Object.keys(MODES) as Mode[]).map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      className={m === props.mode ? "mode selected" : "mode"}
-                      aria-pressed={m === props.mode}
-                      onClick={() => props.onMode(m)}
-                    >
-                      <strong>{MODES[m].label}</strong>
-                      <span>{MODES[m].detail}</span>
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-
-              <fieldset className="choice">
-                <legend>Độ khó</legend>
-                <div className="segmented">
-                  {(Object.keys(DIFFICULTIES) as Difficulty[]).map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      className={d === props.difficulty ? "selected" : undefined}
-                      aria-pressed={d === props.difficulty}
-                      onClick={() => props.onDifficulty(d)}
-                    >
-                      {DIFFICULTIES[d].label}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={props.showMeaning}
-                  onChange={(e) => props.onToggleMeaning(e.target.checked)}
-                />
-                <span>Hiện nghĩa tiếng Việt dưới từ đang rơi</span>
-              </label>
-
-              <button type="button" className="btn primary big hub-cta" onClick={props.onStart}>
-                Bắt đầu <kbd>Enter</kbd>
-              </button>
-            </>
-          )}
-
-          {props.playTab === "party" && (
-            <>
-              <div className="hub-settings-head">
-                <h2>Đấu phòng · Party Battle Royale</h2>
-                <p className="muted small">
-                  Đấu cùng bạn bè hoặc cả hội trường (tối đa 30 người/phòng). Mọi người nhận cùng thứ tự từ — để rơi{" "}
-                  {LIVES} từ là bị loại, người trụ lại cuối cùng thắng!
-                </p>
-              </div>
-
-              <div className="hub-feature-grid">
-                <div className="hub-feature">
-                  <strong>Nhiều phòng song song</strong>
-                  <span>Tự tạo phòng riêng không cần PIN, chia sẻ bằng mã 4 ký tự hoặc QR.</span>
-                </div>
-                <div className="hub-feature">
-                  <strong>Tuỳ chọn thời gian</strong>
-                  <span>3p · 5p · 7p · 10p · 15p · 30p hoặc chơi tới người cuối cùng còn sống.</span>
+                <h2>Gõ từ rơi</h2>
+                <div className="segmented segmented-2" role="tablist" aria-label="Chọn chơi đơn hoặc đấu phòng">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={props.typingPlayMode === "solo"}
+                    className={props.typingPlayMode === "solo" ? "selected" : undefined}
+                    onClick={() => props.onTypingPlayMode("solo")}
+                  >
+                    <Image src="/icons/solo.png" alt="" width={18} height={18} className="tab-icon" unoptimized />
+                    <span>Chơi đơn</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={props.typingPlayMode === "party"}
+                    className={props.typingPlayMode === "party" ? "selected" : undefined}
+                    onClick={() => props.onTypingPlayMode("party")}
+                  >
+                    <Image src="/icons/party.png" alt="" width={18} height={18} className="tab-icon" unoptimized />
+                    <span>Đấu phòng (Party)</span>
+                  </button>
                 </div>
               </div>
 
-              <div className="menu-party-actions hub-cta">
-                <Link href="/party?tab=create" className="btn primary big">
-                  <Image src="/icons/party.png" alt="" width={22} height={22} className="btn-icon" unoptimized />
-                  <span>Tạo phòng mới</span>
-                </Link>
-                <Link href="/party" className="btn big">
-                  Vào phòng bằng mã
-                </Link>
-              </div>
+              {props.typingPlayMode === "solo" ? (
+                <>
+                  <p className="muted small">
+                    Gõ các từ IELTS trước khi chạm đất, để rơi {LIVES} từ là thua. Cứ {BOSS_EVERY} map có một boss. Chữ
+                    hồng có <span className="heart">♥</span> cho thêm 1 mạng.
+                  </p>
 
-              <p className="muted tiny menu-party-foot">
-                Tổ chức trên màn hình lớn / TV? <Link href="/party/host">Mở màn hình Host</Link>
-              </p>
+                  <fieldset className="choice">
+                    <legend>Chế độ</legend>
+                    <div className="mode-grid">
+                      {(Object.keys(MODES) as Mode[]).map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          className={m === props.mode ? "mode selected" : "mode"}
+                          aria-pressed={m === props.mode}
+                          onClick={() => props.onMode(m)}
+                        >
+                          <strong>{MODES[m].label}</strong>
+                          <span>{MODES[m].detail}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+
+                  <fieldset className="choice">
+                    <legend>Độ khó</legend>
+                    <div className="segmented">
+                      {(Object.keys(DIFFICULTIES) as Difficulty[]).map((d) => (
+                        <button
+                          key={d}
+                          type="button"
+                          className={d === props.difficulty ? "selected" : undefined}
+                          aria-pressed={d === props.difficulty}
+                          onClick={() => props.onDifficulty(d)}
+                        >
+                          {DIFFICULTIES[d].label}
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+
+                  <label className="switch">
+                    <input
+                      type="checkbox"
+                      checked={props.showMeaning}
+                      onChange={(e) => props.onToggleMeaning(e.target.checked)}
+                    />
+                    <span>Hiện nghĩa tiếng Việt dưới từ đang rơi</span>
+                  </label>
+
+                  <button type="button" className="btn primary big hub-cta" onClick={props.onStart}>
+                    Bắt đầu <kbd>Enter</kbd>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="muted small">
+                    Đấu cùng bạn bè hoặc cả hội trường (tối đa 30 người/phòng). Mọi người nhận cùng thứ tự từ — để rơi{" "}
+                    {LIVES} từ là bị loại, người trụ lại cuối cùng thắng!
+                  </p>
+
+                  <div className="hub-feature-grid">
+                    <div className="hub-feature">
+                      <strong>Nhiều phòng song song</strong>
+                      <span>Tự tạo phòng riêng không cần PIN, chia sẻ bằng mã 4 ký tự hoặc QR.</span>
+                    </div>
+                    <div className="hub-feature">
+                      <strong>Tuỳ chọn thời gian</strong>
+                      <span>3p · 5p · 7p · 10p · 15p · 30p hoặc chơi tới người cuối cùng còn sống.</span>
+                    </div>
+                  </div>
+
+                  <div className="menu-party-actions hub-cta">
+                    <Link href="/party?tab=create" className="btn primary big">
+                      <Image src="/icons/party.png" alt="" width={22} height={22} className="btn-icon" unoptimized />
+                      <span>Tạo phòng mới</span>
+                    </Link>
+                    <Link href="/party" className="btn big">
+                      Vào phòng bằng mã
+                    </Link>
+                  </div>
+
+                  <p className="muted tiny menu-party-foot">
+                    Tổ chức trên màn hình lớn / TV? <Link href="/party/host">Mở màn hình Host</Link>
+                  </p>
+                </>
+              )}
             </>
           )}
 
