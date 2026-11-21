@@ -78,12 +78,19 @@ export interface GameState {
   errorTick: number;
   missed: Entry[];
   bestAtStart: number;
+  party: PartyConfig | null; // set only in party mode; solo behaviour never reads it
+  spawned: number; // words spawned so far (party: index into the seeded word stream)
+  bossPicks: number; // boss words picked so far (party: index into the seeded boss stream)
+}
+
+export interface PartyConfig {
+  seed: number;
 }
 
 export type Action =
   | { type: "setMode"; mode: Mode }
   | { type: "setDifficulty"; difficulty: Difficulty }
-  | { type: "start"; pool: Entry[]; best: number }
+  | { type: "start"; pool: Entry[]; best: number; mode?: Mode; difficulty?: Difficulty; party?: PartyConfig }
   | { type: "tick"; dt: number; rand: number[] }
   | { type: "input"; value: string }
   | { type: "submit" }
@@ -176,8 +183,31 @@ export function activePoolSize(mode: Mode, difficulty: Difficulty, poolLength: n
   return Math.min(poolLength, growth.start + (map - 1) * growth.perMap);
 }
 
+/** Party rounds use a fixed pool for the whole round: the most frequent entries for the difficulty. */
+export function partyPool(mode: Mode, difficulty: Difficulty, words: Entry[], phrases: Entry[]): Entry[] {
+  const pool = buildPool(mode, difficulty, words, phrases);
+  return pool.slice(0, Math.min(pool.length, DIFFICULTIES[difficulty][mode].start));
+}
+
 const activePool = (state: GameState) =>
-  state.pool.slice(0, activePoolSize(state.mode, state.difficulty, state.pool.length, state.map));
+  state.party
+    ? state.pool
+    : state.pool.slice(0, activePoolSize(state.mode, state.difficulty, state.pool.length, state.map));
+
+/**
+ * A deterministic value in [0, 1) for position `n` of the stream `seed`.
+ * Party mode draws word picks from it by spawn order, so word n is the same on every phone
+ * no matter how many frames each one renders.
+ */
+export function seededRandom(seed: number, n: number): number {
+  let t = (seed ^ Math.imul(n + 1, 0x9e3779b9)) >>> 0;
+  t = Math.imul(t ^ (t >>> 16), 0x21f0aaad);
+  t = Math.imul(t ^ (t >>> 15), 0x735a2d97);
+  t ^= t >>> 15;
+  return (t >>> 0) / 4294967296;
+}
+
+const BOSS_STREAM = 1_000_000;
 
 export const isBossMap = (map: number) => map % BOSS_EVERY === 0;
 
@@ -232,6 +262,9 @@ export function initialState(mode: Mode = "words", difficulty: Difficulty = "nor
     errorTick: 0,
     missed: [],
     bestAtStart: 0,
+    party: null,
+    spawned: 0,
+    bossPicks: 0,
   };
 }
 
@@ -406,9 +439,12 @@ function pick(list: Entry[], r: number) {
 function spawn(state: GameState, rand: number[]): GameState {
   const pool = activePool(state);
   if (pool.length === 0) return state;
-  let entry = pick(pool, rand[R.pick]);
+  const [rPick, rRepick] = state.party
+    ? [seededRandom(state.party.seed, state.spawned * 2), seededRandom(state.party.seed, state.spawned * 2 + 1)]
+    : [rand[R.pick], rand[R.repick]];
+  let entry = pick(pool, rPick);
   if (state.items.some((i) => i.text === entry.text) && pool.length > 1) {
-    entry = pool[(pool.indexOf(entry) + 1 + Math.floor(rand[R.repick] * (pool.length - 1))) % pool.length];
+    entry = pool[(pool.indexOf(entry) + 1 + Math.floor(rRepick * (pool.length - 1))) % pool.length];
   }
 
   const [lo, hi] = state.mode === "phrases" ? [20, 80] : [12, 88];
@@ -429,14 +465,16 @@ function spawn(state: GameState, rand: number[]): GameState {
     rand[R.heart] < heartChance(state.lives) && !state.items.some((i) => i.kind === "heart") ? "heart" : "normal";
   const speed = (speedFactor(state.map) / fallSeconds(state)) * (0.9 + rand[R.speed] * 0.2);
   const item: FallingItem = { ...entry, id: state.nextId, kind, x, y: 0, speed };
-  return { ...state, items: [...state.items, item], nextId: state.nextId + 1 };
+  return { ...state, items: [...state.items, item], nextId: state.nextId + 1, spawned: state.spawned + 1 };
 }
 
+/** Picks the boss's next word; callers bump `bossPicks` so party phones stay on the same stream. */
 function bossWord(state: GameState, r: number): Entry {
   const minLength = state.mode === "words" ? 7 : 10;
   const pool = activePool(state);
   const long = pool.filter((e) => e.text.length >= minLength);
-  return pick(long.length ? long : pool, r);
+  const rr = state.party ? seededRandom(state.party.seed, BOSS_STREAM + state.bossPicks) : r;
+  return pick(long.length ? long : pool, rr);
 }
 
 function summonBoss(state: GameState, rand: number[]): GameState {
@@ -445,6 +483,7 @@ function summonBoss(state: GameState, rand: number[]): GameState {
   const maxHp = Math.min(8, 3 + index);
   return {
     ...state,
+    bossPicks: state.bossPicks + 1,
     boss: {
       ...template,
       index,
@@ -508,7 +547,10 @@ function tick(state: GameState, dt: number, rand: number[]): GameState {
   if (isBossMap(next.map) && !next.boss) next = summonBoss(next, rand);
   if (next.boss) {
     let boss = { ...next.boss, attackIn: next.boss.attackIn - dt };
-    if (!boss.word) boss = { ...boss, word: bossWord(next, rand[R.bossWord]) };
+    if (!boss.word) {
+      boss = { ...boss, word: bossWord(next, rand[R.bossWord]) };
+      next = { ...next, bossPicks: next.bossPicks + 1 };
+    }
     next = { ...next, boss };
     if (boss.attackIn <= 0) {
       next = bossAttack(next, rand);
@@ -566,9 +608,10 @@ export function reducer(state: GameState, action: Action): GameState {
       return state.status === "menu" || state.status === "over" ? { ...state, difficulty: action.difficulty } : state;
     case "start":
       return {
-        ...initialState(state.mode, state.difficulty),
+        ...initialState(action.mode ?? state.mode, action.difficulty ?? state.difficulty),
         status: "playing",
         pool: action.pool,
+        party: action.party ?? null,
         bestAtStart: action.best,
         banner: { text: "Map 1", tone: "map", at: 0 },
       };
@@ -579,13 +622,15 @@ export function reducer(state: GameState, action: Action): GameState {
     case "submit":
       return state.status === "playing" ? submit(state) : state;
     case "pause":
-      return state.status === "playing" ? { ...state, status: "paused" } : state;
+      // Party rounds never pause: the other players keep going.
+      return state.status === "playing" && !state.party ? { ...state, status: "paused" } : state;
     case "resume":
       return state.status === "paused" ? { ...state, status: "playing" } : state;
     case "continue":
       // Revive after losing: full lives, same map and score. Words close to the ground are
       // cleared so the player is not knocked out again straight away.
-      return state.status === "over"
+      // Party rounds are elimination: no reviving.
+      return state.status === "over" && !state.party
         ? {
             ...state,
             status: "playing",
