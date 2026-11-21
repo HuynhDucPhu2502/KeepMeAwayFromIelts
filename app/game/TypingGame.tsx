@@ -66,7 +66,7 @@ const bestKey = (mode: Mode, difficulty: Difficulty) => `${mode}:${difficulty}`;
 
 export default function TypingGame() {
   const [state, dispatch] = useReducer(reducer, undefined, () => initialState());
-  const [playTab, setPlayTab] = useState<"solo" | "party">("solo");
+  const [playTab, setPlayTab] = useState<"solo" | "party" | "writing">("solo");
   const [showMeaning, setShowMeaning] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const overAt = useRef(0);
@@ -285,11 +285,11 @@ export default function TypingGame() {
 }
 
 function Menu(props: {
-  playTab: "solo" | "party";
+  playTab: "solo" | "party" | "writing";
   mode: Mode;
   difficulty: Difficulty;
   showMeaning: boolean;
-  onPlayTab: (tab: "solo" | "party") => void;
+  onPlayTab: (tab: "solo" | "party" | "writing") => void;
   onMode: (mode: Mode) => void;
   onDifficulty: (difficulty: Difficulty) => void;
   onToggleMeaning: (show: boolean) => void;
@@ -305,7 +305,7 @@ function Menu(props: {
           </h1>
         </div>
 
-        <div className="segmented segmented-2" role="tablist" aria-label="Chọn chơi đơn hoặc chơi phòng">
+        <div className="segmented" role="tablist" aria-label="Chọn trò chơi">
           <button
             type="button"
             role="tab"
@@ -313,7 +313,7 @@ function Menu(props: {
             className={props.playTab === "solo" ? "selected" : undefined}
             onClick={() => props.onPlayTab("solo")}
           >
-            <Image src="/icons/solo.png" alt="" width={22} height={22} className="tab-icon" unoptimized />
+            <Image src="/icons/solo.png" alt="" width={20} height={20} className="tab-icon" unoptimized />
             <span>Chơi đơn</span>
           </button>
           <button
@@ -323,8 +323,18 @@ function Menu(props: {
             className={props.playTab === "party" ? "selected" : undefined}
             onClick={() => props.onPlayTab("party")}
           >
-            <Image src="/icons/party.png" alt="" width={22} height={22} className="tab-icon" unoptimized />
+            <Image src="/icons/party.png" alt="" width={20} height={20} className="tab-icon" unoptimized />
             <span>Chơi phòng</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={props.playTab === "writing"}
+            className={props.playTab === "writing" ? "selected" : undefined}
+            onClick={() => props.onPlayTab("writing")}
+          >
+            <Image src="/icons/trophy.png" alt="" width={20} height={20} className="tab-icon" unoptimized />
+            <span>Writing</span>
           </button>
         </div>
 
@@ -384,7 +394,7 @@ function Menu(props: {
               Bắt đầu <kbd>Enter</kbd>
             </button>
           </>
-        ) : (
+        ) : props.playTab === "party" ? (
           <>
             <p className="muted small">
               Đấu cùng bạn bè hoặc cả hội trường (tối đa 30 người/phòng). Mọi người nhận cùng thứ tự từ — để rơi {LIVES}{" "}
@@ -404,6 +414,26 @@ function Menu(props: {
             <p className="muted tiny menu-party-foot">
               Tổ chức trên màn hình lớn / TV? <Link href="/party/host">Mở màn hình Host</Link>
             </p>
+          </>
+        ) : (
+          <>
+            <p className="muted small">
+              Luyện IELTS Writing kiểu game: soi 8 dạng biểu đồ Task 1, điền collocation Band 8 và xếp mạch 4 đoạn văn
+              Task 2!
+            </p>
+
+            <div className="menu-party-actions">
+              <Link href="/writing?mode=task1" className="btn primary big">
+                <Image src="/icons/trophy.png" alt="" width={22} height={22} className="btn-icon" unoptimized />
+                <span>Task 1 · Soi Biểu Đồ</span>
+              </Link>
+              <Link href="/writing?mode=task2" className="btn big">
+                Task 2 · Lấp Khung &amp; Xếp Mạch
+              </Link>
+              <Link href="/writing" className="btn">
+                Chơi tổng hợp (Task 1 + 2)
+              </Link>
+            </div>
           </>
         )}
       </div>
