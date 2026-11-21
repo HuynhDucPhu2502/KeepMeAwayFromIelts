@@ -424,21 +424,25 @@ function GameOver(props: {
   const newRecord = state.score > 0 && state.score > state.bestAtStart;
   return (
     <div className="overlay">
-      <div className="card">
-        <Image
-          src={newRecord ? "/icons/trophy.png" : "/icons/mascot.png"}
-          alt=""
-          width={72}
-          height={72}
-          className="result-hero-icon"
-          unoptimized
-        />
-        <h2>{newRecord ? "Kỷ lục mới!" : "Hết mạng rồi"}</h2>
-        <p className="final-score">{state.score.toLocaleString("vi-VN")}</p>
-        <p className="muted small">
-          Kỷ lục: {props.best.toLocaleString("vi-VN")}
-          {state.continues > 0 && ` · Đã hồi sinh ${state.continues} lần`}
-        </p>
+      <div className="card over-card">
+        <div className="over-head">
+          <Image
+            src={newRecord ? "/icons/trophy.png" : "/icons/mascot.png"}
+            alt=""
+            width={60}
+            height={60}
+            className="over-icon"
+            unoptimized
+          />
+          <div className="over-head-info">
+            <h2>{newRecord ? "Kỷ lục mới!" : "Hết mạng rồi"}</h2>
+            <p className="final-score">{state.score.toLocaleString("vi-VN")}</p>
+            <p className="muted small">
+              Kỷ lục: {props.best.toLocaleString("vi-VN")}
+              {state.continues > 0 && ` · Đã hồi sinh ${state.continues} lần`}
+            </p>
+          </div>
+        </div>
         <dl className="summary">
           <div>
             <dt>Đã gõ</dt>
@@ -465,19 +469,6 @@ function GameOver(props: {
             <dd>{state.bossesDefeated}</dd>
           </div>
         </dl>
-        {state.missed.length > 0 && (
-          <div className="missed">
-            <h3>Bị rơi, ôn lại nhé</h3>
-            <ul>
-              {state.missed.map((m) => (
-                <li key={m.text}>
-                  <span className="missed-word">{m.text}</span>
-                  {m.meaning && <span className="missed-meaning">{m.meaning}</span>}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
         <button type="button" className="btn primary big" onClick={props.onContinue}>
           Chơi tiếp, bơm đầy <span className="heart-inline">♥</span> <kbd>Enter</kbd>
         </button>

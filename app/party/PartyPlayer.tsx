@@ -898,105 +898,109 @@ function Lobby(props: {
     return (
       <div className="overlay">
         <div className="card party-lobby-card">
-          <h2>Phòng của bạn</h2>
-          <div className="party-share-row">
-            {props.qr && (
-              <div
-                className="party-qr party-player-host-qr"
-                aria-label={`Mã QR vào phòng ${session.code}`}
-                dangerouslySetInnerHTML={{ __html: props.qr }}
-              />
-            )}
-            <div className="party-share-info">
-              <span className="muted tiny">MÃ PHÒNG</span>
-              <strong className="party-share-code">{session.code}</strong>
-              <button type="button" className="btn btn-sm" onClick={props.onCopyLink}>
-                {props.copied ? "Đã sao chép link!" : "Sao chép link mời"}
+          <section className="party-lobby-left">
+            <h2>Phòng của bạn</h2>
+            <div className="party-share-row">
+              {props.qr && (
+                <div
+                  className="party-qr party-player-host-qr"
+                  aria-label={`Mã QR vào phòng ${session.code}`}
+                  dangerouslySetInnerHTML={{ __html: props.qr }}
+                />
+              )}
+              <div className="party-share-info">
+                <span className="muted tiny">MÃ PHÒNG</span>
+                <strong className="party-share-code">{session.code}</strong>
+                <button type="button" className="btn btn-sm" onClick={props.onCopyLink}>
+                  {props.copied ? "Đã sao chép link!" : "Sao chép link mời"}
+                </button>
+              </div>
+            </div>
+            <p className="muted small">
+              {players.length} người trong phòng <span className="tiny">(tối đa 30)</span>
+            </p>
+            <ul className="party-names">
+              {players.map(([uid, p]) => (
+                <li key={uid} className={uid === session.uid ? "me" : undefined}>
+                  {p.name}
+                </li>
+              ))}
+            </ul>
+          </section>
+          <section className="party-lobby-right">
+            <fieldset className="choice">
+              <legend>Chế độ</legend>
+              <div className="segmented segmented-2">
+                {(Object.keys(MODE_LABEL) as Mode[]).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    className={m === props.settings.mode ? "selected" : undefined}
+                    aria-pressed={m === props.settings.mode}
+                    onClick={() => props.onSettings({ ...props.settings, mode: m })}
+                  >
+                    {MODE_LABEL[m]}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset className="choice">
+              <legend>Độ khó</legend>
+              <div className="segmented">
+                {(Object.keys(DIFFICULTIES) as Difficulty[]).map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    className={d === props.settings.difficulty ? "selected" : undefined}
+                    aria-pressed={d === props.settings.difficulty}
+                    onClick={() => props.onSettings({ ...props.settings, difficulty: d })}
+                  >
+                    {DIFFICULTIES[d].label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset className="choice">
+              <legend>Thời gian</legend>
+              <div className="segmented segmented-6">
+                {ROUND_MINUTES.map((mins) => (
+                  <button
+                    key={mins}
+                    type="button"
+                    className={[
+                      mins === props.settings.durationMin ? "selected" : "",
+                      mins === LAST_SURVIVOR_DURATION ? "segmented-full" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ") || undefined}
+                    aria-pressed={mins === props.settings.durationMin}
+                    onClick={() => props.onSettings({ ...props.settings, durationMin: mins })}
+                  >
+                    {mins === LAST_SURVIVOR_DURATION ? "Người cuối cùng còn sống" : `${mins}p`}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            {props.error && <p className="party-error">{props.error}</p>}
+            <div className="actions">
+              <button
+                type="button"
+                className="btn primary big"
+                disabled={players.length === 0 || props.busy}
+                onClick={props.onStart}
+              >
+                Bắt đầu
+              </button>
+              <button type="button" className="btn btn-danger" disabled={props.busy} onClick={props.onClose}>
+                Đóng phòng
               </button>
             </div>
-          </div>
-          <p className="muted small">
-            {players.length} người trong phòng <span className="tiny">(tối đa 30)</span>
-          </p>
-          <ul className="party-names">
-            {players.map(([uid, p]) => (
-              <li key={uid} className={uid === session.uid ? "me" : undefined}>
-                {p.name}
-              </li>
-            ))}
-          </ul>
-          <fieldset className="choice">
-            <legend>Chế độ</legend>
-            <div className="segmented segmented-2">
-              {(Object.keys(MODE_LABEL) as Mode[]).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  className={m === props.settings.mode ? "selected" : undefined}
-                  aria-pressed={m === props.settings.mode}
-                  onClick={() => props.onSettings({ ...props.settings, mode: m })}
-                >
-                  {MODE_LABEL[m]}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-          <fieldset className="choice">
-            <legend>Độ khó</legend>
-            <div className="segmented">
-              {(Object.keys(DIFFICULTIES) as Difficulty[]).map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  className={d === props.settings.difficulty ? "selected" : undefined}
-                  aria-pressed={d === props.settings.difficulty}
-                  onClick={() => props.onSettings({ ...props.settings, difficulty: d })}
-                >
-                  {DIFFICULTIES[d].label}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-          <fieldset className="choice">
-            <legend>Thời gian</legend>
-            <div className="segmented segmented-6">
-              {ROUND_MINUTES.map((mins) => (
-                <button
-                  key={mins}
-                  type="button"
-                  className={[
-                    mins === props.settings.durationMin ? "selected" : "",
-                    mins === LAST_SURVIVOR_DURATION ? "segmented-full" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ") || undefined}
-                  aria-pressed={mins === props.settings.durationMin}
-                  onClick={() => props.onSettings({ ...props.settings, durationMin: mins })}
-                >
-                  {mins === LAST_SURVIVOR_DURATION ? "Người cuối cùng còn sống" : `${mins}p`}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-          {props.error && <p className="party-error">{props.error}</p>}
-          <div className="actions">
-            <button
-              type="button"
-              className="btn primary big"
-              disabled={players.length === 0 || props.busy}
-              onClick={props.onStart}
-            >
-              Bắt đầu
-            </button>
-            <button type="button" className="btn btn-danger" disabled={props.busy} onClick={props.onClose}>
-              Đóng phòng
-            </button>
-          </div>
-          <p className="muted tiny">
-            {props.settings.durationMin === LAST_SURVIVOR_DURATION
-              ? "Không giới hạn thời gian · để rơi 5 từ là bị loại · chơi tới người trụ lại cuối cùng."
-              : `Vòng tối đa ${props.settings.durationMin} phút · để rơi 5 từ là bị loại · chấm band theo mẫu miễn phí.`}
-          </p>
+            <p className="muted tiny">
+              {props.settings.durationMin === LAST_SURVIVOR_DURATION
+                ? "Không giới hạn thời gian · để rơi 5 từ là bị loại · chơi tới người trụ lại cuối cùng."
+                : `Vòng tối đa ${props.settings.durationMin} phút · để rơi 5 từ là bị loại · chấm band theo mẫu miễn phí.`}
+            </p>
+          </section>
         </div>
       </div>
     );
@@ -1042,7 +1046,6 @@ function Out(props: {
   const rank = ranking.indexOf(session.uid) + 1;
   const me = room.players[session.uid];
   const score = props.forfeited ? (me?.score ?? 0) : engine.score;
-  const missed: Entry[] = props.forfeited ? (me?.missed ?? []).map((text) => ({ text })) : engine.missed;
   return (
     <Notice title={props.forfeited ? "Bạn đã rời vòng quá lâu" : "Bạn bị loại rồi"}>
       <p className="party-rank">
@@ -1051,19 +1054,6 @@ function Out(props: {
       <p className="muted small party-live">
         {props.alive > 0 ? `Còn ${props.alive} người đang trụ…` : "Đang tổng kết vòng…"}
       </p>
-      {missed.length > 0 && (
-        <div className="missed">
-          <h3>Bị rơi, ôn lại nhé</h3>
-          <ul>
-            {missed.map((m) => (
-              <li key={m.text}>
-                <span className="missed-word">{m.text}</span>
-                {m.meaning && <span className="missed-meaning">{m.meaning}</span>}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
       {props.isHost && props.alive > 0 && (
         <button type="button" className="btn btn-sm" onClick={props.onEndNow}>
           Kết thúc vòng ngay
