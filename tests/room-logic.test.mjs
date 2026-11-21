@@ -2,9 +2,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  DEFAULT_ROUND_MINUTES,
   DISCONNECT_GRACE_MS,
+  LAST_SURVIVOR_DURATION,
   MAX_NAME,
   ROOM_ALPHABET,
+  ROUND_MINUTES,
   ROUND_MS,
   addRoomCode,
   cleanName,
@@ -12,11 +15,14 @@ import {
   isOut,
   isRoomCode,
   makeRoomCode,
+  normalizeDurationMin,
   normalizeRoom,
   parseRoomCodes,
   participants,
   rankPlayers,
   removeRoomCode,
+  roundDurationMs,
+  shouldCloseEmptyRoom,
   shouldEnd,
   shouldEnroll,
 } from "../app/party/room-logic.ts";
@@ -225,12 +231,72 @@ test("normalizeRoom fills what Realtime Database drops (empty arrays, nulls)", (
   const empty = normalizeRoom({ hostUid: "h", status: "weird" });
   assert.deepEqual(empty.players, {});
   assert.equal(empty.status, "lobby");
-  assert.deepEqual(empty.settings, { mode: "words", difficulty: "easy" });
+  assert.deepEqual(empty.settings, { mode: "words", difficulty: "easy", durationMin: 3 });
+
+  const customDuration = normalizeRoom({
+    hostUid: "h",
+    settings: { mode: "phrases", difficulty: "hard", durationMin: 15 },
+  });
+  assert.deepEqual(customDuration.settings, { mode: "phrases", difficulty: "hard", durationMin: 15 });
+
+  const invalidDuration = normalizeRoom({ hostUid: "h", settings: { durationMin: 99 } });
+  assert.equal(invalidDuration.settings.durationMin, DEFAULT_ROUND_MINUTES);
 
   const ended = normalizeRoom({ hostUid: "h", status: "ended", results: { ranking: { 0: "a", 1: "b" }, fallback: true } });
   assert.deepEqual(ended.results, { ranking: ["a", "b"], cards: [], fallback: true });
 
   assert.equal(normalizeRoom({ hostUid: "h", status: "closed" }), null);
+});
+
+test("round duration options allow 3, 5, 7, 10, 15, 30 minutes and last survivor (0)", () => {
+  assert.deepEqual([...ROUND_MINUTES], [3, 5, 7, 10, 15, 30, 0]);
+  for (const mins of ROUND_MINUTES) {
+    assert.equal(normalizeDurationMin(mins), mins);
+    assert.equal(roundDurationMs(mins), mins * 60_000);
+  }
+  assert.equal(normalizeDurationMin(LAST_SURVIVOR_DURATION), 0);
+  assert.equal(normalizeDurationMin(undefined), 3);
+  assert.equal(normalizeDurationMin(4), 3);
+  assert.equal(normalizeDurationMin("10"), 3);
+
+  const unlimited = normalizeRoom({
+    hostUid: "h",
+    settings: { mode: "words", difficulty: "easy", durationMin: 0 },
+  });
+  assert.equal(unlimited.settings.durationMin, 0);
+});
+
+test("last survivor mode (endsAt = 0) never times out, ends only on elimination", () => {
+  const r = room({ a: player(), b: player() }, { endsAt: 0 });
+  assert.equal(shouldEnd(r, START + 60 * 60_000), false); // 1 hour later, both alive
+  r.players.b = player({ alive: false, eliminatedAt: START + 10_000 });
+  assert.equal(shouldEnd(r, START + 10_100), true); // 1 survivor left
+});
+
+test("shouldCloseEmptyRoom closes only after players have joined and everyone is gone", () => {
+  const freshEmpty = room({}, { status: "lobby" });
+  assert.equal(shouldCloseEmptyRoom(freshEmpty, false, MID), false);
+  // Everyone explicitly left in lobby (players map empty, but hadPlayers is true)
+  assert.equal(shouldCloseEmptyRoom(freshEmpty, true, MID), true);
+
+  // At least one player connected -> stays open
+  const active = room({ a: player({ connected: true }), b: player({ connected: false, disconnectedAt: MID - 20_000 }) });
+  assert.equal(shouldCloseEmptyRoom(active, true, MID), false);
+
+  // Everyone disconnected, within grace period -> stays open
+  const recentDrop = room({
+    a: player({ connected: false, disconnectedAt: MID - 5_000 }),
+    b: player({ connected: false, disconnectedAt: MID - 20_000 }),
+  });
+  assert.equal(shouldCloseEmptyRoom(recentDrop, true, MID), false);
+
+  // Everyone disconnected past grace period -> auto-close (even if hadPlayers flag reset across reload)
+  const allGone = room({
+    a: player({ connected: false, disconnectedAt: MID - DISCONNECT_GRACE_MS - 1 }),
+    b: player({ connected: false, disconnectedAt: MID - 20_000 }),
+  });
+  assert.equal(shouldCloseEmptyRoom(allGone, false, MID), true);
+  assert.equal(shouldCloseEmptyRoom(allGone, true, MID), true);
 });
 
 test("multi-room code helpers validate, deduplicate, parse and remove codes", () => {

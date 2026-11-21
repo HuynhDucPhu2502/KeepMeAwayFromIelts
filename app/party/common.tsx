@@ -34,11 +34,19 @@ export function usePartyAvailability(): Availability {
 
 export const MODE_LABEL: Record<Mode, string> = { words: "Từ đơn", phrases: "Cụm từ" };
 
-export const settingsLabel = (mode: Mode, difficulty: Difficulty) =>
-  `${MODE_LABEL[mode]} · ${DIFFICULTIES[difficulty].label}`;
+export const settingsLabel = (mode: Mode, difficulty: Difficulty, durationMin?: number) => {
+  const duration =
+    durationMin === undefined ? "" : durationMin === 0 ? " · Người cuối cùng còn sống" : ` · ${durationMin} phút`;
+  return `${MODE_LABEL[mode]} · ${DIFFICULTIES[difficulty].label}${duration}`;
+};
 
 export function formatClock(ms: number) {
   const total = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
+
+export function formatElapsed(ms: number) {
+  const total = Math.max(0, Math.floor(ms / 1000));
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }
 

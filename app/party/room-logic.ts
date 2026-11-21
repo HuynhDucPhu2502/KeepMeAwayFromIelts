@@ -3,9 +3,15 @@ import type { Difficulty, Mode } from "../game/engine";
 
 export type RoomStatus = "lobby" | "playing" | "ended";
 
+export const LAST_SURVIVOR_DURATION = 0 as const;
+export const ROUND_MINUTES = [3, 5, 7, 10, 15, 30, LAST_SURVIVOR_DURATION] as const;
+export type RoundMinutes = (typeof ROUND_MINUTES)[number];
+export const DEFAULT_ROUND_MINUTES: RoundMinutes = 3;
+
 export interface RoomSettings {
   mode: Mode;
   difficulty: Difficulty;
+  durationMin: RoundMinutes;
 }
 
 export interface PlayerState {
@@ -50,12 +56,22 @@ export interface Room {
   results?: RoundResults;
 }
 
-export const ROUND_MS = 180_000;
+export const ROUND_MS = DEFAULT_ROUND_MINUTES * 60_000;
 export const COUNTDOWN_MS = 5_000;
 export const MAX_PLAYERS = 30;
 export const MAX_NAME = 16;
 export const DISCONNECT_GRACE_MS = 10_000;
 const LIVES = 5; // same as the engine's LIVES (kept local so this module has no runtime imports)
+
+export function normalizeDurationMin(value: unknown): RoundMinutes {
+  return typeof value === "number" && (ROUND_MINUTES as readonly number[]).includes(value)
+    ? (value as RoundMinutes)
+    : DEFAULT_ROUND_MINUTES;
+}
+
+export function roundDurationMs(durationMin: RoundMinutes): number {
+  return durationMin * 60_000;
+}
 
 export const ROOM_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // A–Z without I and O
 const ROOM_CODE_RE = /^[A-HJ-NP-Z]{4}$/;
@@ -156,11 +172,21 @@ export function aliveCount(room: Room, now: number): number {
 
 export function shouldEnd(room: Room, now: number): boolean {
   if (room.status !== "playing" || now < room.startAt) return false;
-  if (now >= room.endsAt) return true;
+  if (room.endsAt > 0 && now >= room.endsAt) return true;
   const total = participants(room).length;
   const alive = aliveCount(room, now);
   if (alive === 0) return true;
   return total >= 2 && alive <= 1;
+}
+
+/** Auto-closes a room once it has had players and nobody remains connected past the disconnect grace period. */
+export function shouldCloseEmptyRoom(room: Room, hadPlayers: boolean, now: number): boolean {
+  const players = Object.values(room.players);
+  if (!hadPlayers && players.length === 0) return false;
+  if (players.length === 0) return true;
+  return players.every(
+    (p) => p.connected === false && now - (p.disconnectedAt ?? -Infinity) > DISCONNECT_GRACE_MS,
+  );
 }
 
 /** A player who was in the room before this round started joins it; anyone who arrived later waits. */
@@ -212,6 +238,7 @@ export function normalizeRoom(raw: unknown): Room | null {
     settings: {
       mode: settings.mode === "phrases" ? "phrases" : "words",
       difficulty: settings.difficulty === "normal" || settings.difficulty === "hard" ? settings.difficulty : "easy",
+      durationMin: normalizeDurationMin(settings.durationMin),
     },
     seed: num(r.seed, 0),
     startAt: num(r.startAt, 0),

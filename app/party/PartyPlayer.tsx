@@ -2,6 +2,7 @@
 
 // Phone view for party mode: join a room, wait in the lobby, play the round locally, see the result.
 // The game itself runs entirely on this phone; only the score, lives and alive flag go to Firebase.
+import Link from "next/link";
 import { useCallback, useEffect, useReducer, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import QRCode from "qrcode";
@@ -23,8 +24,11 @@ import {
 } from "../game/engine";
 import { Lane } from "../game/Lane";
 import {
+  DEFAULT_ROUND_MINUTES,
   DISCONNECT_GRACE_MS,
+  LAST_SURVIVOR_DURATION,
   MAX_NAME,
+  ROUND_MINUTES,
   aliveCount,
   backToLobby,
   closeRoom,
@@ -38,6 +42,7 @@ import {
   publishPlayer,
   rankPlayers,
   serverNow,
+  shouldCloseEmptyRoom,
   shouldEnd,
   shouldEnroll,
   startRound,
@@ -54,6 +59,7 @@ import {
   Notice,
   errorText,
   formatClock,
+  formatElapsed,
   settingsLabel,
   toReportPlayer,
   usePartyAvailability,
@@ -124,7 +130,7 @@ function replaceRoomUrl(code: string | null) {
 export default function PartyPlayer() {
   const availability = usePartyAvailability();
   const params = useSearchParams();
-  const [entryTab, setEntryTab] = useState<"join" | "create">("join");
+  const [entryTab, setEntryTab] = useState<"join" | "create">(() => (params.get("tab") === "create" ? "create" : "join"));
   const [codeInput, setCodeInput] = useState(() => cleanCode(params.get("room") ?? ""));
   const [nameInput, setNameInput] = useState("");
   const [joining, setJoining] = useState(false);
@@ -134,7 +140,11 @@ export default function PartyPlayer() {
   const [now, setNow] = useState(0);
   const [control, setControl] = useState<Control>({ localRound: null, startedRound: null, forfeitRound: null });
   const [engine, dispatch] = useReducer(reducer, undefined, () => initialState("words", "easy"));
-  const [hostSettings, setHostSettings] = useState<RoomSettings>({ mode: "words", difficulty: "easy" });
+  const [hostSettings, setHostSettings] = useState<RoomSettings>({
+    mode: "words",
+    difficulty: "easy",
+    durationMin: DEFAULT_ROUND_MINUTES,
+  });
   const [hostBusy, setHostBusy] = useState(false);
   const [hostError, setHostError] = useState<string | null>(null);
   const [qr, setQr] = useState("");
@@ -355,17 +365,23 @@ export default function PartyPlayer() {
     [session, publish],
   );
 
-  // Player-host end check every 500 ms (same rule as PartyHost, without Gemini).
+  // Player-host end check every 500 ms: auto-close if empty, or end round when one survivor/time is up (without Gemini).
   useEffect(() => {
     if (!session || !isHost) return;
     const id = window.setInterval(() => {
       const r = roomRef.current;
-      if (r && r.status === "playing" && r.hostUid === session.uid && shouldEnd(r, serverNow())) {
+      if (!r || r.hostUid !== session.uid) return;
+      const t = serverNow();
+      if (shouldCloseEmptyRoom(r, true, t)) {
+        void closeRoom(session.code).finally(resetToEntry);
+        return;
+      }
+      if (r.status === "playing" && shouldEnd(r, t)) {
         void finishAsHost(r);
       }
     }, 500);
     return () => window.clearInterval(id);
-  }, [session, isHost, finishAsHost]);
+  }, [session, isHost, finishAsHost, resetToEntry]);
 
   // Controller: server clock, room snapshot, joining the round, starting the engine, periodic publish.
   useEffect(() => {
@@ -405,7 +421,7 @@ export default function PartyPlayer() {
         return;
       }
 
-      if (ctl.startedRound !== r.round && t >= r.startAt && t < r.endsAt) {
+      if (ctl.startedRound !== r.round && t >= r.startAt && (r.endsAt === 0 || t < r.endsAt)) {
         ps.sig = "";
         ps.eliminatedAt = null;
         const { mode, difficulty } = r.settings;
@@ -467,7 +483,7 @@ export default function PartyPlayer() {
   const started = inRound && control.startedRound === room.round;
   const forfeited = inRound && control.forfeitRound === room.round;
   const out = started && (engine.status === "over" || forfeited);
-  const timeUp = !!room && room.status === "playing" && now >= room.endsAt;
+  const timeUp = !!room && room.status === "playing" && room.endsAt > 0 && now >= room.endsAt;
   const countdown = !!room && room.status === "playing" && inRound && (now < room.startAt || !started) && !timeUp;
   const running = !!room && room.status === "playing" && started && !out && !timeUp && engine.status === "playing";
   const canType = !!room && room.status === "playing" && inRound && !out && !timeUp;
@@ -700,7 +716,13 @@ export default function PartyPlayer() {
             </div>
             <div>
               <dt>Thời gian</dt>
-              <dd>{formatClock(room.endsAt - Math.max(now, room.startAt))}</dd>
+              <dd>
+                {room.endsAt === 0
+                  ? countdown
+                    ? "∞"
+                    : formatElapsed(Math.max(0, now - room.startAt))
+                  : formatClock(room.endsAt - Math.max(now, room.startAt))}
+              </dd>
             </div>
           </dl>
         ) : (
@@ -743,7 +765,9 @@ export default function PartyPlayer() {
 
         {countdown && room && (
           <div className="party-countdown" aria-live="polite">
-            <span className="party-countdown-label">{settingsLabel(room.settings.mode, room.settings.difficulty)}</span>
+            <span className="party-countdown-label">
+              {settingsLabel(room.settings.mode, room.settings.difficulty, room.settings.durationMin)}
+            </span>
             <strong>{Math.max(1, Math.ceil((room.startAt - now) / 1000))}</strong>
             <span className="party-countdown-label">Chạm vào ô gõ bên dưới để mở bàn phím</span>
           </div>
@@ -835,6 +859,9 @@ function JoinForm(props: {
               ? "Đang vào…"
               : "Vào phòng"}
         </button>
+        <p className="muted tiny">
+          <Link href="/">← Quay lại Chơi đơn</Link>
+        </p>
       </form>
     </div>
   );
@@ -923,6 +950,27 @@ function Lobby(props: {
               ))}
             </div>
           </fieldset>
+          <fieldset className="choice">
+            <legend>Thời gian</legend>
+            <div className="segmented segmented-6">
+              {ROUND_MINUTES.map((mins) => (
+                <button
+                  key={mins}
+                  type="button"
+                  className={[
+                    mins === props.settings.durationMin ? "selected" : "",
+                    mins === LAST_SURVIVOR_DURATION ? "segmented-full" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ") || undefined}
+                  aria-pressed={mins === props.settings.durationMin}
+                  onClick={() => props.onSettings({ ...props.settings, durationMin: mins })}
+                >
+                  {mins === LAST_SURVIVOR_DURATION ? "Người cuối cùng còn sống" : `${mins}p`}
+                </button>
+              ))}
+            </div>
+          </fieldset>
           {props.error && <p className="party-error">{props.error}</p>}
           <div className="actions">
             <button
@@ -937,7 +985,11 @@ function Lobby(props: {
               Đóng phòng
             </button>
           </div>
-          <p className="muted tiny">Vòng tối đa 3 phút · để rơi 5 từ là bị loại · chấm band theo mẫu miễn phí.</p>
+          <p className="muted tiny">
+            {props.settings.durationMin === LAST_SURVIVOR_DURATION
+              ? "Không giới hạn thời gian · để rơi 5 từ là bị loại · chơi tới người trụ lại cuối cùng."
+              : `Vòng tối đa ${props.settings.durationMin} phút · để rơi 5 từ là bị loại · chấm band theo mẫu miễn phí.`}
+          </p>
         </div>
       </div>
     );
@@ -947,7 +999,7 @@ function Lobby(props: {
     <Notice title="Chờ host bắt đầu…">
       <p className="muted small">
         Phòng <strong className="accent">{session.code}</strong> · {players.length} người trong phòng ·{" "}
-        {settingsLabel(room.settings.mode, room.settings.difficulty)}
+        {settingsLabel(room.settings.mode, room.settings.difficulty, room.settings.durationMin)}
       </p>
       <ul className="party-names">
         {players.map(([uid, p]) => (
@@ -956,7 +1008,11 @@ function Lobby(props: {
           </li>
         ))}
       </ul>
-      <p className="muted tiny">Vòng chơi tối đa 3 phút. Không tạm dừng được, nên giữ màn hình luôn mở nhé.</p>
+      <p className="muted tiny">
+        {room.settings.durationMin === LAST_SURVIVOR_DURATION
+          ? "Không giới hạn thời gian — chơi tới người trụ lại cuối cùng. Không tạm dừng được, nên giữ màn hình luôn mở nhé."
+          : `Vòng chơi tối đa ${room.settings.durationMin} phút. Không tạm dừng được, nên giữ màn hình luôn mở nhé.`}
+      </p>
       <button type="button" className="btn btn-sm" disabled={props.busy} onClick={props.onLeave}>
         Rời phòng
       </button>

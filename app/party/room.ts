@@ -3,11 +3,12 @@
 import { firebase, serverNow } from "./firebase";
 import {
   COUNTDOWN_MS,
+  DEFAULT_ROUND_MINUTES,
   MAX_PLAYERS,
-  ROUND_MS,
   cleanName,
   makeRoomCode,
   normalizeRoom,
+  roundDurationMs,
   type PlayerState,
   type Room,
   type RoomSettings,
@@ -41,7 +42,7 @@ export async function createRoom(hostUid: string): Promise<string> {
         createdAt: dbSdk.serverTimestamp(),
         round: 0,
         status: "lobby",
-        settings: { mode: "words", difficulty: "easy" } satisfies RoomSettings,
+        settings: { mode: "words", difficulty: "easy", durationMin: DEFAULT_ROUND_MINUTES } satisfies RoomSettings,
         seed: 0,
         startAt: 0,
         endsAt: 0,
@@ -158,7 +159,7 @@ export async function startRound(code: string, room: Room, settings: RoomSetting
     seed: Math.floor(Math.random() * 2 ** 31),
     settings,
     startAt,
-    endsAt: startAt + ROUND_MS,
+    endsAt: settings.durationMin === 0 ? 0 : startAt + roundDurationMs(settings.durationMin),
     status: "playing",
     results: null,
   });

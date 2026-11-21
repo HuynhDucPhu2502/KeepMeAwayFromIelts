@@ -1194,6 +1194,20 @@ kbd {
   grid-template-columns: repeat(2, 1fr);
 }
 
+.segmented-6 {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.segmented-full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 520px) {
+  .segmented-6 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 .party-round {
   flex: 1;
   display: flex;
@@ -1510,4 +1524,35 @@ kbd {
   line-height: 1;
   letter-spacing: 0.14em;
   color: var(--accent);
+}
+
+.hud.hud-menu {
+  min-height: 54px;
+}
+
+.hud.hud-menu .hud-brand {
+  display: block;
+}
+
+.menu-party-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.menu-party-actions .btn {
+  text-align: center;
+}
+
+.menu-party-foot {
+  text-align: center;
+}
+
+.party-notice-banner {
+  padding: 8px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--target);
+  background: rgba(56, 189, 248, 0.08);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
 }

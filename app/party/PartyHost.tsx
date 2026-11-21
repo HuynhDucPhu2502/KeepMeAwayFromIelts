@@ -6,6 +6,9 @@ import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNod
 import QRCode from "qrcode";
 import { DIFFICULTIES, LIVES, type Difficulty, type Mode } from "../game/engine";
 import {
+  DEFAULT_ROUND_MINUTES,
+  LAST_SURVIVOR_DURATION,
+  ROUND_MINUTES,
   addRoomCode,
   aliveCount,
   backToLobby,
@@ -20,6 +23,7 @@ import {
   rankPlayers,
   removeRoomCode,
   serverNow,
+  shouldCloseEmptyRoom,
   shouldEnd,
   startRound,
   subscribeRoom,
@@ -29,7 +33,16 @@ import {
   type RoomSettings,
 } from "./room";
 import { fallbackCards } from "./report-core";
-import { AvailabilityNotice, MODE_LABEL, errorText, formatClock, settingsLabel, toReportPlayer, usePartyAvailability } from "./common";
+import {
+  AvailabilityNotice,
+  MODE_LABEL,
+  errorText,
+  formatClock,
+  formatElapsed,
+  settingsLabel,
+  toReportPlayer,
+  usePartyAvailability,
+} from "./common";
 
 const PIN_KEY = "kmafi:party:pin";
 const ROOM_KEY = "kmafi:party:host-room";
@@ -87,14 +100,26 @@ export default function PartyHost() {
   const [error, setError] = useState<string | null>(null);
   const [qr, setQr] = useState("");
   const [now, setNow] = useState(0);
-  const [settings, setSettings] = useState<RoomSettings>({ mode: "words", difficulty: "easy" });
+  const [settings, setSettings] = useState<RoomSettings>({
+    mode: "words",
+    difficulty: "easy",
+    durationMin: DEFAULT_ROUND_MINUTES,
+  });
   const [busy, setBusy] = useState(false);
   const [creatingRoom, setCreatingRoom] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
   const roomRef = useRef<Room | null | undefined>(undefined);
+  const roomsRef = useRef<string[]>([]);
   const endingRound = useRef<number | null>(null);
   const syncedSettingsFor = useRef<string | null>(null);
+  const hadPlayersByRoom = useRef<Set<string>>(new Set());
+  const autoClosing = useRef<string | null>(null);
+
+  useEffect(() => {
+    roomsRef.current = rooms;
+  }, [rooms]);
 
   const persistRooms = useCallback((nextRooms: string[], nextCode: string | null) => {
     writeStorage(ROOMS_KEY, nextRooms.length > 0 ? JSON.stringify(nextRooms) : null);
@@ -155,6 +180,9 @@ export default function PartyHost() {
     return subscribeRoom(code, (next) => {
       roomRef.current = next;
       setRoom(next);
+      if (next && Object.values(next.players).some((p) => p.connected)) {
+        hadPlayersByRoom.current.add(code);
+      }
       if (next && syncedSettingsFor.current !== code) {
         syncedSettingsFor.current = code;
         setSettings(next.settings);
@@ -227,15 +255,46 @@ export default function PartyHost() {
     [code, pin],
   );
 
-  // End check every 500 ms: one survivor left, everyone out, or time is up.
+  const closeAndAdvance = useCallback(
+    async (targetCode: string, reason?: string) => {
+      await closeRoom(targetCode);
+      hadPlayersByRoom.current.delete(targetCode);
+      const nextRooms = removeRoomCode(roomsRef.current, targetCode);
+      const nextCode = nextRooms[0] ?? null;
+      persistRooms(nextRooms, nextCode);
+      endingRound.current = null;
+      syncedSettingsFor.current = null;
+      roomRef.current = undefined;
+      setRoom(undefined);
+      setConfirmClose(false);
+      setRooms(nextRooms);
+      setCode(nextCode);
+      setNotice(reason ?? null);
+    },
+    [persistRooms],
+  );
+
+  // End check every 500 ms: auto-close when everyone has left, or end round when one survivor/time is up.
   useEffect(() => {
     if (!code || !pin) return;
     const id = window.setInterval(() => {
       const r = roomRef.current;
-      if (r && r.status === "playing" && shouldEnd(r, serverNow())) void finish(r);
+      if (!r) return;
+      const t = serverNow();
+      if (shouldCloseEmptyRoom(r, hadPlayersByRoom.current.has(code), t)) {
+        if (autoClosing.current === code) return;
+        autoClosing.current = code;
+        void closeAndAdvance(code, `Phòng ${code} đã tự đóng vì không còn người chơi.`)
+          .catch((e) => setError(errorText(e)))
+          .finally(() => {
+            if (autoClosing.current === code) autoClosing.current = null;
+          });
+        return;
+      }
+      if (r.status === "playing" && shouldEnd(r, t)) void finish(r);
     }, 500);
     return () => window.clearInterval(id);
-  }, [code, pin, finish]);
+  }, [code, pin, finish, closeAndAdvance]);
 
   const onPin = async (event: FormEvent) => {
     event.preventDefault();
@@ -263,6 +322,7 @@ export default function PartyHost() {
     setRoom(undefined);
     setConfirmClose(false);
     setError(null);
+    setNotice(null);
     writeStorage(ROOM_KEY, nextCode);
     setCode(nextCode);
   };
@@ -270,6 +330,7 @@ export default function PartyHost() {
   const onNewRoom = async () => {
     setCreatingRoom(true);
     setError(null);
+    setNotice(null);
     try {
       const uid = hostUid ?? (await ensureSignedIn());
       setHostUid(uid);
@@ -299,17 +360,7 @@ export default function PartyHost() {
     setBusy(true);
     setError(null);
     try {
-      await closeRoom(code);
-      const nextRooms = removeRoomCode(rooms, code);
-      const nextCode = nextRooms[0] ?? null;
-      persistRooms(nextRooms, nextCode);
-      endingRound.current = null;
-      syncedSettingsFor.current = null;
-      roomRef.current = undefined;
-      setRoom(undefined);
-      setConfirmClose(false);
-      setRooms(nextRooms);
-      setCode(nextCode);
+      await closeAndAdvance(code);
     } catch (e) {
       setError(errorText(e));
     } finally {
@@ -505,6 +556,7 @@ export default function PartyHost() {
           </div>
         )}
       </header>
+      {notice && <p className="party-notice-banner">{notice}</p>}
       {error && room && <p className="party-error party-host-error">{error}</p>}
       <main className="party-host-main">{body}</main>
     </div>
@@ -574,10 +626,35 @@ function HostLobby(props: {
             ))}
           </div>
         </fieldset>
+        <fieldset className="choice">
+          <legend>Thời gian</legend>
+          <div className="segmented segmented-6">
+            {ROUND_MINUTES.map((mins) => (
+              <button
+                key={mins}
+                type="button"
+                className={[
+                  mins === props.settings.durationMin ? "selected" : "",
+                  mins === LAST_SURVIVOR_DURATION ? "segmented-full" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ") || undefined}
+                aria-pressed={mins === props.settings.durationMin}
+                onClick={() => props.onSettings({ ...props.settings, durationMin: mins })}
+              >
+                {mins === LAST_SURVIVOR_DURATION ? "Người cuối cùng còn sống" : `${mins}p`}
+              </button>
+            ))}
+          </div>
+        </fieldset>
         <button type="button" className="btn primary big" disabled={online === 0 || props.busy} onClick={props.onStart}>
           Bắt đầu
         </button>
-        <p className="muted tiny">Vòng tối đa 3 phút · để rơi 5 từ là bị loại · người trụ lại cuối cùng thắng.</p>
+        <p className="muted tiny">
+          {props.settings.durationMin === LAST_SURVIVOR_DURATION
+            ? "Không giới hạn thời gian · để rơi 5 từ là bị loại · chơi tới người trụ lại cuối cùng · hết người tự đóng phòng."
+            : `Vòng tối đa ${props.settings.durationMin} phút · để rơi 5 từ là bị loại · người trụ lại cuối cùng thắng · hết người tự đóng phòng.`}
+        </p>
       </section>
     </div>
   );
@@ -590,11 +667,14 @@ function HostRound(props: { code: string; room: Room; qr: string; now: number; f
   const alive = aliveCount(room, now);
   const waiting = Object.values(room.players).filter((p) => p.round !== room.round && p.connected).length;
   const countdown = now < room.startAt;
+  const unlimited = room.endsAt === 0;
   return (
     <div className="party-round">
       <div className="party-round-head">
-        <span className="muted">{settingsLabel(room.settings.mode, room.settings.difficulty)}</span>
-        <span className="party-clock">⏱ {formatClock(room.endsAt - Math.max(now, room.startAt))}</span>
+        <span className="muted">{settingsLabel(room.settings.mode, room.settings.difficulty, room.settings.durationMin)}</span>
+        <span className="party-clock">
+          ⏱ {unlimited ? (countdown ? "∞" : formatElapsed(Math.max(0, now - room.startAt))) : formatClock(room.endsAt - Math.max(now, room.startAt))}
+        </span>
       </div>
       {countdown ? (
         <p className="party-big-count">{Math.max(1, Math.ceil((room.startAt - now) / 1000))}</p>
