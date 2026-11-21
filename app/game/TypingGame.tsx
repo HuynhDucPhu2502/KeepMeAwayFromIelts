@@ -186,7 +186,7 @@ export default function TypingGame() {
     <div className="game">
       <header className={status === "menu" ? "hud hud-menu" : "hud"}>
         <div className="hud-brand">
-          <Image src="/icons/mascot.png" alt="" width={30} height={30} className="brand-icon" unoptimized />
+          <Image src="/logo.png" alt="Keep Me Away From IELTS" width={32} height={32} className="brand-icon" unoptimized />
           <span>Keep Me Away From IELTS</span>
         </div>
         {status !== "menu" && (
@@ -414,7 +414,7 @@ function Menu(props: {
         {/* Left: Game library */}
         <section className="hub-library" aria-label="Kho game">
           <div className="menu-hero">
-            <Image src="/icons/mascot.png" alt="" width={58} height={58} className="menu-hero-icon" unoptimized />
+            <Image src="/logo.png" alt="Keep Me Away From IELTS" width={62} height={62} className="menu-hero-icon" unoptimized />
             <div>
               <h1 className="title">
                 Keep Me Away From <span className="accent">IELTS</span>

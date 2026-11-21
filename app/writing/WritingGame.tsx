@@ -268,7 +268,7 @@ export default function WritingGame() {
     <div className="game ws-page">
       <header className={phase === "menu" ? "hud hud-menu" : "hud"}>
         <Link href="/" className="hud-brand">
-          <Image src="/icons/mascot.png" alt="" width={30} height={30} className="brand-icon" unoptimized />
+          <Image src="/logo.png" alt="Keep Me Away From IELTS" width={30} height={30} className="brand-icon" unoptimized />
           <span>Keep Me Away From IELTS · Writing</span>
         </Link>
         {phase !== "menu" && (

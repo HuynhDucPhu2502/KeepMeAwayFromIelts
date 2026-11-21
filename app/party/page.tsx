@@ -1,11 +1,20 @@
-import type { Metadata, Viewport } from "next";
+import type { Viewport } from "next";
 import { Suspense } from "react";
+import { pageMetadata } from "../seo";
 import PartyPlayer from "./PartyPlayer";
 
-export const metadata: Metadata = {
-  title: "Party · Keep Me Away From IELTS",
-  description: "Cả booth cùng gõ chữ: để rơi 5 từ là bị loại, người trụ lại cuối cùng thắng.",
-};
+export const metadata = pageMetadata({
+  title: "Đấu Phòng Party",
+  description:
+    "Chế độ Battle Royale gõ từ vựng IELTS 2–30 người cùng lúc: tạo phòng hoặc quét QR vào chơi ngay, để rơi 5 từ là bị loại.",
+  path: "/party",
+  keywords: [
+    "đấu phòng từ vựng IELTS",
+    "game tiếng Anh nhiều người chơi",
+    "party typing game IELTS",
+    "thi gõ từ tiếng Anh theo lớp",
+  ],
+});
 
 export const viewport: Viewport = {
   themeColor: "#faf6ee",

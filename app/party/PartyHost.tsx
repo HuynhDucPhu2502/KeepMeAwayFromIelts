@@ -518,7 +518,7 @@ export default function PartyHost() {
     <div className="party-host">
       <header className="hud party-host-bar">
         <div className="hud-brand">
-          <Image src="/icons/mascot.png" alt="" width={32} height={32} className="brand-icon" unoptimized />
+          <Image src="/logo.png" alt="Keep Me Away From IELTS" width={32} height={32} className="brand-icon" unoptimized />
           <span>
             KEEP ME AWAY FROM <span className="accent">IELTS</span> · PARTY
           </span>

@@ -689,7 +689,7 @@ export default function PartyPlayer() {
     <div ref={rootRef} className="game party-phone">
       <header className="hud party-hud">
         <div className="hud-brand">
-          <Image src="/icons/mascot.png" alt="" width={28} height={28} className="brand-icon" unoptimized />
+          <Image src="/logo.png" alt="Keep Me Away From IELTS" width={30} height={30} className="brand-icon" unoptimized />
           <span>Keep Me Away From IELTS · Party</span>
         </div>
         {inRound && room?.status === "playing" ? (

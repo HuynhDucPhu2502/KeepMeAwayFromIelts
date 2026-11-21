@@ -1,11 +1,19 @@
-import type { Metadata } from "next";
 import { Suspense } from "react";
+import { pageMetadata } from "../seo";
 import SpeakingGame from "./SpeakingGame";
 
-export const metadata: Metadata = {
-  title: "Phản Xạ Speaking · Keep Me Away From IELTS",
-  description: "Luyện cụm từ nói tự nhiên Part 1–3 và thử thách Cue Card 45 giây chuẩn IELTS Speaking.",
-};
+export const metadata = pageMetadata({
+  title: "Phản Xạ Speaking",
+  description:
+    "Luyện cụm từ nói tự nhiên IELTS Speaking Part 1–3 dạng điền từ và thử thách Cue Card 45 giây có chấm từ khóa.",
+  path: "/speaking",
+  keywords: [
+    "luyện IELTS Speaking",
+    "IELTS Speaking Part 2 Cue Card",
+    "từ vựng IELTS Speaking Part 1 2 3",
+    "phản xạ nói tiếng Anh",
+  ],
+});
 
 export default function SpeakingPage() {
   return (

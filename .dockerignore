@@ -8,7 +8,6 @@ Dockerfile
 .env*
 *.tsbuildinfo
 README.md
-AGENTS.md
-CLAUDE.md
+docs
 scripts
 data/source
