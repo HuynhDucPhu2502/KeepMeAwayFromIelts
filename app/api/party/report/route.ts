@@ -1,8 +1,11 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { buildReportPrompt, cleanReportPlayers, fallbackCards, parseCards, type ReportPlayer } from "@/app/party/report-core";
 import { hostPin, noStore, notFound, pinMatches, readJson, wrongPin } from "../pin";
 
-const TIMEOUT_MS = 10_000;
+// The host page gives up on this route after 15 s (PartyHost.tsx), so stay safely below that.
+// Measured on gemini-3.8-flash (Nov 2026): default thinking took 8.5 s, 10.1 s and >18 s;
+// thinkingLevel LOW answered in ~3.6 s. MINIMAL is rejected (HTTP 400) by this model.
+const TIMEOUT_MS = 13_000;
 
 async function geminiCards(players: ReportPlayer[]) {
   // Vertex AI with the service's own credentials (Cloud Run service account, or ADC locally).
@@ -18,6 +21,8 @@ async function geminiCards(players: ReportPlayer[]) {
     config: {
       responseMimeType: "application/json",
       temperature: 0.9,
+      // Short, funny comments do not need deep reasoning; low thinking keeps the reply fast.
+      thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
       abortSignal: AbortSignal.timeout(TIMEOUT_MS),
     },
   });
