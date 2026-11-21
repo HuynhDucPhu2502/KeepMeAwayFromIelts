@@ -2350,7 +2350,10 @@ kbd {
 .hub-game-list {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 8px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .hub-game-item {
@@ -2525,4 +2528,203 @@ kbd {
   .hub-feature-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ---------------------------------------------------------------- */
+/* Arcade Mini-Games (Listening, Blitz, Scramble, Speaking)         */
+/* ---------------------------------------------------------------- */
+.arcade-card {
+  max-width: 580px;
+  padding: 24px 26px;
+  gap: 16px;
+}
+
+.arcade-audio-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px;
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  background: #faf6ee;
+  text-align: center;
+}
+
+.arcade-speak-btn {
+  font-size: 16px;
+  padding: 11px 22px;
+}
+
+.arcade-meaning {
+  font-size: 15px;
+  color: var(--text);
+}
+
+.arcade-input {
+  text-align: center;
+  font-size: 20px;
+  letter-spacing: 0.04em;
+}
+
+.arcade-diff {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  font-family: var(--font-mono-ui), monospace;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.diff-ok {
+  color: #15803d;
+}
+
+.diff-bad {
+  color: #dc2626;
+  background: #fee2e2;
+  padding: 0 3px;
+  border-radius: 4px;
+}
+
+.blitz-fever {
+  border-color: #f97316;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.16), 0 14px 36px rgba(249, 115, 22, 0.16);
+}
+
+.blitz-prompt {
+  padding: 22px 18px;
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  background: #faf6ee;
+  text-align: center;
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: 800;
+  color: var(--text);
+}
+
+.blitz-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 560px) {
+  .blitz-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.scramble-meaning {
+  padding: 14px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  background: #faf6ee;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.scramble-slots,
+.scramble-bank {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.scramble-slot,
+.scramble-tile {
+  width: 44px;
+  height: 48px;
+  border-radius: 12px;
+  font-family: var(--font-mono-ui), monospace;
+  font-size: 20px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.08s, border-color 0.12s, background 0.12s;
+}
+
+.scramble-slot {
+  border: 2px dashed #cbd5e1;
+  background: #faf6ee;
+  color: var(--text);
+}
+
+.scramble-slot.filled {
+  border-style: solid;
+  border-color: var(--target);
+  background: #f0f9ff;
+  color: #0369a1;
+}
+
+.scramble-tile {
+  border: 2px solid var(--line);
+  border-bottom-width: 4px;
+  background: #ffffff;
+  color: var(--text);
+}
+
+.scramble-tile:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: #fff7ed;
+  transform: translateY(-2px);
+}
+
+.scramble-tile.used {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.cue-bullets {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 18px;
+  list-style: disc;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.cue-keywords {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.cue-kw {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 2px solid var(--line);
+  border-bottom-width: 3px;
+  border-radius: 12px;
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.cue-kw strong {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.cue-kw span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.cue-kw.hit {
+  border-color: #22c55e;
+  background: #f0fdf4;
+}
+
+.cue-kw.hit strong {
+  color: #15803d;
 }

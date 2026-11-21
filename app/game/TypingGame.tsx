@@ -75,12 +75,22 @@ function parseBest(raw: string): Record<string, number> {
 
 const bestKey = (mode: Mode, difficulty: Difficulty) => `${mode}:${difficulty}`;
 
+type HubGameId = "solo" | "party" | "writing" | "listening" | "blitz" | "scramble" | "speaking";
+
 export default function TypingGame() {
   const [state, dispatch] = useReducer(reducer, undefined, () => initialState());
-  const [playTab, setPlayTab] = useState<"solo" | "party" | "writing">("solo");
+  const [playTab, setPlayTab] = useState<HubGameId>("solo");
   const [showMeaning, setShowMeaning] = useState(true);
   const [writingMode, setWritingMode] = useState<WritingMode>("task1");
   const [writingCount, setWritingCount] = useState<WritingRoundCount>(10);
+  const [listenSource, setListenSource] = useState<"words" | "phrases">("words");
+  const [listenAccent, setListenAccent] = useState<"en-GB" | "en-US">("en-GB");
+  const [listenDiff, setListenDiff] = useState<Difficulty>("easy");
+  const [blitzDir, setBlitzDir] = useState<"en-vi" | "vi-en">("en-vi");
+  const [blitzDiff, setBlitzDiff] = useState<Difficulty>("easy");
+  const [blitzSec, setBlitzSec] = useState<30 | 60 | 90>(60);
+  const [scrambleDiff, setScrambleDiff] = useState<Difficulty>("easy");
+  const [speakingMode, setSpeakingMode] = useState<"cloze" | "cuecard">("cloze");
   const inputRef = useRef<HTMLInputElement>(null);
   const overAt = useRef(0);
   const bestRaw = useSyncExternalStore(subscribeBest, readBestRaw, () => "");
@@ -260,12 +270,28 @@ export default function TypingGame() {
             showMeaning={showMeaning}
             writingMode={writingMode}
             writingCount={writingCount}
+            listenSource={listenSource}
+            listenAccent={listenAccent}
+            listenDiff={listenDiff}
+            blitzDir={blitzDir}
+            blitzDiff={blitzDiff}
+            blitzSec={blitzSec}
+            scrambleDiff={scrambleDiff}
+            speakingMode={speakingMode}
             onPlayTab={setPlayTab}
             onMode={(m) => dispatch({ type: "setMode", mode: m })}
             onDifficulty={(d) => dispatch({ type: "setDifficulty", difficulty: d })}
             onToggleMeaning={setShowMeaning}
             onWritingMode={setWritingMode}
             onWritingCount={setWritingCount}
+            onListenSource={setListenSource}
+            onListenAccent={setListenAccent}
+            onListenDiff={setListenDiff}
+            onBlitzDir={setBlitzDir}
+            onBlitzDiff={setBlitzDiff}
+            onBlitzSec={setBlitzSec}
+            onScrambleDiff={setScrambleDiff}
+            onSpeakingMode={setSpeakingMode}
             onStart={start}
           />
         )}
@@ -302,26 +328,42 @@ export default function TypingGame() {
 }
 
 function Menu(props: {
-  playTab: "solo" | "party" | "writing";
+  playTab: HubGameId;
   mode: Mode;
   difficulty: Difficulty;
   showMeaning: boolean;
   writingMode: WritingMode;
   writingCount: WritingRoundCount;
-  onPlayTab: (tab: "solo" | "party" | "writing") => void;
+  listenSource: "words" | "phrases";
+  listenAccent: "en-GB" | "en-US";
+  listenDiff: Difficulty;
+  blitzDir: "en-vi" | "vi-en";
+  blitzDiff: Difficulty;
+  blitzSec: 30 | 60 | 90;
+  scrambleDiff: Difficulty;
+  speakingMode: "cloze" | "cuecard";
+  onPlayTab: (tab: HubGameId) => void;
   onMode: (mode: Mode) => void;
   onDifficulty: (difficulty: Difficulty) => void;
   onToggleMeaning: (show: boolean) => void;
   onWritingMode: (mode: WritingMode) => void;
   onWritingCount: (count: WritingRoundCount) => void;
+  onListenSource: (s: "words" | "phrases") => void;
+  onListenAccent: (a: "en-GB" | "en-US") => void;
+  onListenDiff: (d: Difficulty) => void;
+  onBlitzDir: (d: "en-vi" | "vi-en") => void;
+  onBlitzDiff: (d: Difficulty) => void;
+  onBlitzSec: (s: 30 | 60 | 90) => void;
+  onScrambleDiff: (d: Difficulty) => void;
+  onSpeakingMode: (m: "cloze" | "cuecard") => void;
   onStart: () => void;
 }) {
-  const games: { id: "solo" | "party" | "writing"; icon: string; title: string; subtitle: string; badge: string }[] = [
+  const games: { id: HubGameId; icon: string; title: string; subtitle: string; badge: string }[] = [
     {
       id: "solo",
       icon: "/icons/solo.png",
       title: "Gõ từ rơi",
-      subtitle: "Chơi đơn · 5.785 từ & 307 cụm IELTS",
+      subtitle: "5.785 từ & 307 cụm · Có Boss mỗi 5 map",
       badge: "Vocab",
     },
     {
@@ -329,7 +371,7 @@ function Menu(props: {
       icon: "/icons/party.png",
       title: "Đấu phòng (Party)",
       subtitle: "2–30 người · Quét QR · Sinh tồn",
-      badge: "Multiplayer",
+      badge: "Party",
     },
     {
       id: "writing",
@@ -337,6 +379,34 @@ function Menu(props: {
       title: "Writing Sprint",
       subtitle: "8 biểu đồ Task 1 · 6 dạng luận Task 2",
       badge: "Writing",
+    },
+    {
+      id: "listening",
+      icon: "/icons/listening.png",
+      title: "Nghe & Gõ",
+      subtitle: "Nghe phát âm UK/US & luyện chính tả",
+      badge: "Listening",
+    },
+    {
+      id: "blitz",
+      icon: "/icons/blitz.png",
+      title: "Nối Nghĩa Tốc Độ",
+      subtitle: "60s phản xạ 4 đáp án · Fever x2 điểm",
+      badge: "Speed",
+    },
+    {
+      id: "scramble",
+      icon: "/icons/scramble.png",
+      title: "Xếp Chữ IELTS",
+      subtitle: "Ghép chữ cái bị xáo trộn từ nghĩa Việt",
+      badge: "Puzzle",
+    },
+    {
+      id: "speaking",
+      icon: "/icons/speaking.png",
+      title: "Phản Xạ Speaking",
+      subtitle: "Cụm nói Part 1–3 & Cue Card 45 giây",
+      badge: "Speaking",
     },
   ];
 
@@ -535,6 +605,245 @@ function Menu(props: {
               >
                 <Image src="/icons/trophy.png" alt="" width={22} height={22} className="btn-icon" unoptimized />
                 <span>Bắt đầu Writing →</span>
+              </Link>
+            </>
+          )}
+
+          {props.playTab === "listening" && (
+            <>
+              <div className="hub-settings-head">
+                <h2>Nghe &amp; Gõ · IELTS Listening</h2>
+                <p className="muted small">
+                  Nghe phát âm tiếng Anh (giọng Anh-Anh hoặc Anh-Mỹ) rồi gõ đúng chính tả — báo lỗi chi tiết tới từng
+                  ký tự!
+                </p>
+              </div>
+
+              <fieldset className="choice">
+                <legend>Nội dung nghe</legend>
+                <div className="segmented segmented-2">
+                  <button
+                    type="button"
+                    className={props.listenSource === "words" ? "selected" : undefined}
+                    onClick={() => props.onListenSource("words")}
+                  >
+                    Từ đơn IELTS
+                  </button>
+                  <button
+                    type="button"
+                    className={props.listenSource === "phrases" ? "selected" : undefined}
+                    onClick={() => props.onListenSource("phrases")}
+                  >
+                    Cụm Reading/Listening
+                  </button>
+                </div>
+              </fieldset>
+
+              <fieldset className="choice">
+                <legend>Giọng đọc</legend>
+                <div className="segmented segmented-2">
+                  <button
+                    type="button"
+                    className={props.listenAccent === "en-GB" ? "selected" : undefined}
+                    onClick={() => props.onListenAccent("en-GB")}
+                  >
+                    🇬🇧 Anh - Anh (UK)
+                  </button>
+                  <button
+                    type="button"
+                    className={props.listenAccent === "en-US" ? "selected" : undefined}
+                    onClick={() => props.onListenAccent("en-US")}
+                  >
+                    🇺🇸 Anh - Mỹ (US)
+                  </button>
+                </div>
+              </fieldset>
+
+              {props.listenSource === "words" && (
+                <fieldset className="choice">
+                  <legend>Độ khó</legend>
+                  <div className="segmented">
+                    {(Object.keys(DIFFICULTIES) as Difficulty[]).map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        className={d === props.listenDiff ? "selected" : undefined}
+                        onClick={() => props.onListenDiff(d)}
+                      >
+                        {DIFFICULTIES[d].label}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+              )}
+
+              <Link
+                href={`/listening?source=${props.listenSource}&accent=${props.listenAccent}&difficulty=${props.listenDiff}&autostart=1`}
+                className="btn primary big hub-cta"
+              >
+                <Image src="/icons/listening.png" alt="" width={22} height={22} className="btn-icon" unoptimized />
+                <span>Bắt đầu nghe →</span>
+              </Link>
+            </>
+          )}
+
+          {props.playTab === "blitz" && (
+            <>
+              <div className="hub-settings-head">
+                <h2>Nối Nghĩa Tốc Độ · Vocab Blitz</h2>
+                <p className="muted small">
+                  Đua tốc độ chọn 4 đáp án bằng phím 1–4. Đúng liên tiếp 5 câu kích hoạt 🔥 Fever Mode x2 điểm và cộng
+                  thêm +2 giây!
+                </p>
+              </div>
+
+              <fieldset className="choice">
+                <legend>Chiều nối nghĩa</legend>
+                <div className="segmented segmented-2">
+                  <button
+                    type="button"
+                    className={props.blitzDir === "en-vi" ? "selected" : undefined}
+                    onClick={() => props.onBlitzDir("en-vi")}
+                  >
+                    Anh → Việt
+                  </button>
+                  <button
+                    type="button"
+                    className={props.blitzDir === "vi-en" ? "selected" : undefined}
+                    onClick={() => props.onBlitzDir("vi-en")}
+                  >
+                    Việt → Anh
+                  </button>
+                </div>
+              </fieldset>
+
+              <fieldset className="choice">
+                <legend>Độ khó</legend>
+                <div className="segmented">
+                  {(Object.keys(DIFFICULTIES) as Difficulty[]).map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      className={d === props.blitzDiff ? "selected" : undefined}
+                      onClick={() => props.onBlitzDiff(d)}
+                    >
+                      {DIFFICULTIES[d].label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <fieldset className="choice">
+                <legend>Thời gian</legend>
+                <div className="segmented">
+                  {([30, 60, 90] as const).map((sec) => (
+                    <button
+                      key={sec}
+                      type="button"
+                      className={sec === props.blitzSec ? "selected" : undefined}
+                      onClick={() => props.onBlitzSec(sec)}
+                    >
+                      {sec} giây
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <Link
+                href={`/blitz?dir=${props.blitzDir}&difficulty=${props.blitzDiff}&sec=${props.blitzSec}&autostart=1`}
+                className="btn primary big hub-cta"
+              >
+                <Image src="/icons/blitz.png" alt="" width={22} height={22} className="btn-icon" unoptimized />
+                <span>Chạy Blitz ngay →</span>
+              </Link>
+            </>
+          )}
+
+          {props.playTab === "scramble" && (
+            <>
+              <div className="hub-settings-head">
+                <h2>Xếp Chữ IELTS · Word Scramble</h2>
+                <p className="muted small">
+                  Nhìn nghĩa tiếng Việt rồi ghép các chữ cái bị xáo trộn thành từ IELTS chuẩn — hỗ trợ bấm thẻ lẫn gõ
+                  thẳng bàn phím + gợi ý 1 chữ!
+                </p>
+              </div>
+
+              <fieldset className="choice">
+                <legend>Độ khó (độ dài từ)</legend>
+                <div className="segmented">
+                  {(Object.keys(DIFFICULTIES) as Difficulty[]).map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      className={d === props.scrambleDiff ? "selected" : undefined}
+                      onClick={() => props.onScrambleDiff(d)}
+                    >
+                      {DIFFICULTIES[d].label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <div className="hub-feature-grid">
+                <div className="hub-feature">
+                  <strong>Dễ · 4–6 chữ</strong>
+                  <span>Từ phổ biến dễ nhận mặt chữ.</span>
+                </div>
+                <div className="hub-feature">
+                  <strong>Vừa &amp; Khó · 7–13 chữ</strong>
+                  <span>Luyện chính tả từ học thuật dài hay sai.</span>
+                </div>
+              </div>
+
+              <Link
+                href={`/scramble?difficulty=${props.scrambleDiff}&autostart=1`}
+                className="btn primary big hub-cta"
+              >
+                <Image src="/icons/scramble.png" alt="" width={22} height={22} className="btn-icon" unoptimized />
+                <span>Bắt đầu xếp chữ →</span>
+              </Link>
+            </>
+          )}
+
+          {props.playTab === "speaking" && (
+            <>
+              <div className="hub-settings-head">
+                <h2>Phản Xạ Speaking · Part 1–3</h2>
+                <p className="muted small">
+                  Luyện cụm nói tự nhiên chuẩn giám khảo bản xứ và thử thách Cue Card Part 2 trong 45 giây có bài đọc
+                  mẫu!
+                </p>
+              </div>
+
+              <fieldset className="choice">
+                <legend>Chế độ Speaking</legend>
+                <div className="ws-mode-list">
+                  <button
+                    type="button"
+                    className={props.speakingMode === "cloze" ? "mode selected" : "mode"}
+                    onClick={() => props.onSpeakingMode("cloze")}
+                  >
+                    <strong>Lấp Khung Nói Nhanh (Part 1–3)</strong>
+                    <span>Chọn idiom/collocation tự nhiên như người bản xứ</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={props.speakingMode === "cuecard" ? "mode selected" : "mode"}
+                    onClick={() => props.onSpeakingMode("cuecard")}
+                  >
+                    <strong>Thử Thách Cue Card 45 Giây (Part 2)</strong>
+                    <span>Tick 4 từ khoá Band 8 khi nói &amp; nghe bài mẫu</span>
+                  </button>
+                </div>
+              </fieldset>
+
+              <Link
+                href={`/speaking?mode=${props.speakingMode}&autostart=1`}
+                className="btn primary big hub-cta"
+              >
+                <Image src="/icons/speaking.png" alt="" width={22} height={22} className="btn-icon" unoptimized />
+                <span>Bắt đầu Speaking →</span>
               </Link>
             </>
           )}
