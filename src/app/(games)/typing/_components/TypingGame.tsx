@@ -6,7 +6,8 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useBestScores } from "@/hooks/useBestScore";
 import { loadCustomDeck, type CustomDeck } from "@/lib/custom-deck";
-import { PHRASES, WORDS } from "@/lib/vocab";
+import { VOCAB_COUNTS } from "@/lib/games-registry";
+import { loadVocab } from "@/lib/vocab";
 import {
   BOSS_EVERY,
   DIFFICULTIES,
@@ -28,8 +29,8 @@ import { SoundToggle } from "@/components/SoundToggle";
 import { playBossDefeat, playError, playGameOver, playHeart, playKey, playSuccess } from "@/lib/sfx";
 
 const MODES: Record<Mode, { label: string; detail: string }> = {
-  words: { label: "Từ đơn", detail: `${WORDS.length.toLocaleString("vi-VN")} từ hay gặp nhất trong đề IELTS` },
-  phrases: { label: "Cụm từ", detail: `${PHRASES.length} cụm từ hay gặp trong Reading và Listening` },
+  words: { label: "Từ đơn", detail: `${VOCAB_COUNTS.words.toLocaleString("vi-VN")} từ hay gặp nhất trong đề IELTS` },
+  phrases: { label: "Cụm từ", detail: `${VOCAB_COUNTS.phrases} cụm từ hay gặp trong Reading và Listening` },
 };
 
 const BEST_KEY = "kmafi:best:v1";
@@ -70,8 +71,14 @@ export default function TypingGame() {
   const start = useCallback(
     (m: Mode = mode, d: Difficulty = difficulty) => {
       const b = bestScores[bestKey(m, d)] ?? 0;
-      const pool = customDeck && customDeck.entries.length > 0 ? customDeck.entries : buildPool(m, d, WORDS, PHRASES);
-      dispatch({ type: "start", pool, best: b, mode: m, difficulty: d });
+      if (customDeck && customDeck.entries.length > 0) {
+        dispatch({ type: "start", pool: customDeck.entries, best: b, mode: m, difficulty: d });
+        return;
+      }
+      void loadVocab().then(({ words, phrases }) => {
+        const pool = buildPool(m, d, words, phrases);
+        dispatch({ type: "start", pool, best: b, mode: m, difficulty: d });
+      });
     },
     [mode, difficulty, bestScores, customDeck],
   );
@@ -181,7 +188,7 @@ export default function TypingGame() {
             ← Kho game
           </Link>
           <div className="hud-brand">
-            <Image src="/logo.png" alt="Keep Me Away From IELTS" width={30} height={30} className="brand-icon" unoptimized />
+            <Image src="/icons/logo.webp" alt="Keep Me Away From IELTS" width={30} height={30} className="brand-icon" loading="eager" unoptimized />
             <span>{customDeck ? `Gõ từ rơi · ${customDeck.name}` : "Gõ từ rơi"}</span>
           </div>
         </div>
@@ -270,7 +277,7 @@ export default function TypingGame() {
           <div className="overlay">
             <div className="card">
               <div className="menu-hero">
-                <Image src="/icons/solo.png" alt="" width={58} height={58} className="menu-hero-icon" unoptimized />
+                <Image src="/icons/solo.webp" alt="" width={58} height={58} className="menu-hero-icon" priority unoptimized />
                 <div>
                   <h1 className="title">Gõ từ rơi IELTS</h1>
                   <p className="muted tiny">
@@ -382,7 +389,7 @@ function GameOver(props: {
       <div className="card over-card">
         <div className="over-head">
           <Image
-            src={newRecord ? "/icons/trophy.png" : "/icons/mascot.png"}
+            src={newRecord ? "/icons/trophy.webp" : "/icons/mascot.webp"}
             alt=""
             width={60}
             height={60}

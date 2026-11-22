@@ -50,7 +50,7 @@
 }
 
 .diff-bad {
-  color: #dc2626;
+  color: #b91c1c;
   background: #fee2e2;
   padding: 0 3px;
   border-radius: 4px;
@@ -382,7 +382,7 @@
 }
 
 .rd-btn-false .rd-verdict-top strong {
-  color: #dc2626;
+  color: #b91c1c;
 }
 
 .rd-btn-ng .rd-verdict-top strong {
@@ -695,8 +695,8 @@
 }
 
 .mic-btn.recording {
-  background: #ef4444;
-  border-color: #b91c1c;
+  background: #b91c1c;
+  border-color: #991b1b;
   color: #ffffff;
 }
 

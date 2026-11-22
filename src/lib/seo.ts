@@ -43,7 +43,7 @@ export function pageMetadata(opts: {
           url: "/og-banner.png",
           width: 1200,
           height: 630,
-          alt: `${SITE_NAME} — Kho 6 mini-game học IELTS miễn phí`,
+          alt: `${SITE_NAME} — Kho 7 mini-game học IELTS miễn phí`,
         },
       ],
     },

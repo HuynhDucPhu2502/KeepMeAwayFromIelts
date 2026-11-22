@@ -78,7 +78,7 @@ export default function GameHub() {
         {/* Left: Game library */}
         <section className="hub-library" aria-label="Kho game">
           <div className="menu-hero">
-            <Image src="/logo.png" alt="Keep Me Away From IELTS" width={64} height={64} className="menu-hero-icon" unoptimized />
+            <Image src="/icons/logo.webp" alt="Keep Me Away From IELTS" width={64} height={64} className="menu-hero-icon" priority unoptimized />
             <div>
               <h1 className="title">
                 Keep Me Away From <span className="accent">IELTS</span>
@@ -100,7 +100,7 @@ export default function GameHub() {
                   className={selected ? "hub-game-item selected" : "hub-game-item"}
                   onClick={() => setPlayTab(g.id)}
                 >
-                  <Image src={g.icon} alt="" width={40} height={40} className="hub-game-icon" unoptimized />
+                  <Image src={g.icon} alt="" width={40} height={40} className="hub-game-icon" loading="eager" unoptimized />
                   <div className="hub-game-meta">
                     <div className="hub-game-title-row">
                       <strong>{g.title}</strong>
@@ -141,7 +141,7 @@ export default function GameHub() {
                     className={typingPlayMode === "solo" ? "selected" : undefined}
                     onClick={() => setTypingPlayMode("solo")}
                   >
-                    <Image src="/icons/solo.png" alt="" width={18} height={18} className="tab-icon" unoptimized />
+                    <Image src="/icons/solo.webp" alt="" width={18} height={18} className="tab-icon" loading="eager" unoptimized />
                     <span>Chơi đơn</span>
                   </button>
                   <button
@@ -151,7 +151,7 @@ export default function GameHub() {
                     className={typingPlayMode === "party" ? "selected" : undefined}
                     onClick={() => setTypingPlayMode("party")}
                   >
-                    <Image src="/icons/party.png" alt="" width={18} height={18} className="tab-icon" unoptimized />
+                    <Image src="/icons/party.webp" alt="" width={18} height={18} className="tab-icon" loading="eager" unoptimized />
                     <span>Đấu phòng (Party)</span>
                   </button>
                 </div>
@@ -209,7 +209,7 @@ export default function GameHub() {
                   </label>
 
                   <Link href={typingHref} className="btn primary big hub-cta">
-                    <Image src="/icons/solo.png" alt="" width={22} height={22} className="btn-icon" unoptimized />
+                    <Image src="/icons/solo.webp" alt="" width={22} height={22} className="btn-icon" loading="eager" unoptimized />
                     <span>Bắt đầu gõ từ rơi →</span>
                   </Link>
                 </>
@@ -233,7 +233,7 @@ export default function GameHub() {
 
                   <div className="menu-party-actions hub-cta">
                     <Link href="/party?tab=create" className="btn primary big">
-                      <Image src="/icons/party.png" alt="" width={22} height={22} className="btn-icon" unoptimized />
+                      <Image src="/icons/party.webp" alt="" width={22} height={22} className="btn-icon" unoptimized />
                       <span>Tạo phòng mới</span>
                     </Link>
                     <Link href="/party" className="btn big">
@@ -304,7 +304,7 @@ export default function GameHub() {
                 href={`/reading?difficulty=${readingDiff}&count=${readingCount}&timed=${readingTimed ? "1" : "0"}&autostart=1`}
                 className="btn primary big hub-cta"
               >
-                <Image src="/icons/reading.png" alt="" width={22} height={22} className="btn-icon" unoptimized />
+                <Image src="/icons/reading.webp" alt="" width={22} height={22} className="btn-icon" unoptimized />
                 <span>Bắt đầu Reading →</span>
               </Link>
             </>
@@ -359,7 +359,7 @@ export default function GameHub() {
                 href={`/writing?mode=${writingMode}&count=${writingCount}&autostart=1`}
                 className="btn primary big hub-cta"
               >
-                <Image src="/icons/trophy.png" alt="" width={22} height={22} className="btn-icon" unoptimized />
+                <Image src="/icons/trophy.webp" alt="" width={22} height={22} className="btn-icon" unoptimized />
                 <span>Bắt đầu Writing →</span>
               </Link>
             </>
@@ -437,7 +437,7 @@ export default function GameHub() {
                 href={`/listening?source=${listenSource}&accent=${listenAccent}&difficulty=${listenDiff}&autostart=1`}
                 className="btn primary big hub-cta"
               >
-                <Image src="/icons/listening.png" alt="" width={22} height={22} className="btn-icon" unoptimized />
+                <Image src="/icons/listening.webp" alt="" width={22} height={22} className="btn-icon" unoptimized />
                 <span>Bắt đầu nghe →</span>
               </Link>
             </>
@@ -509,7 +509,7 @@ export default function GameHub() {
                 href={`/blitz?dir=${blitzDir}&difficulty=${blitzDiff}&sec=${blitzSec}&autostart=1`}
                 className="btn primary big hub-cta"
               >
-                <Image src="/icons/blitz.png" alt="" width={22} height={22} className="btn-icon" unoptimized />
+                <Image src="/icons/blitz.webp" alt="" width={22} height={22} className="btn-icon" unoptimized />
                 <span>Chạy Blitz ngay →</span>
               </Link>
             </>
@@ -556,7 +556,7 @@ export default function GameHub() {
                 href={`/scramble?difficulty=${scrambleDiff}&autostart=1`}
                 className="btn primary big hub-cta"
               >
-                <Image src="/icons/scramble.png" alt="" width={22} height={22} className="btn-icon" unoptimized />
+                <Image src="/icons/scramble.webp" alt="" width={22} height={22} className="btn-icon" unoptimized />
                 <span>Bắt đầu xếp chữ →</span>
               </Link>
             </>
@@ -598,7 +598,7 @@ export default function GameHub() {
                 href={`/speaking?mode=${speakingMode}&autostart=1`}
                 className="btn primary big hub-cta"
               >
-                <Image src="/icons/speaking.png" alt="" width={22} height={22} className="btn-icon" unoptimized />
+                <Image src="/icons/speaking.webp" alt="" width={22} height={22} className="btn-icon" unoptimized />
                 <span>Bắt đầu Speaking →</span>
               </Link>
             </>

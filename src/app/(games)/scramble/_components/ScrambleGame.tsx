@@ -4,11 +4,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { SoundToggle } from "@/components/SoundToggle";
 import { loadCustomDeck, type CustomDeck } from "@/lib/custom-deck";
 import { playError, playGameOver, playKey, playSuccess } from "@/lib/sfx";
-import { WORDS } from "@/lib/vocab";
+import { loadWords } from "@/lib/vocab";
 import { DIFFICULTIES, type Difficulty, type Entry } from "@/lib/typing-engine";
 import {
   filterScramblePool,
@@ -44,36 +44,41 @@ export default function ScrambleGame() {
     return valid.length > 0 ? { name: d.name, entries: valid } : null;
   });
   const didAutostart = useRef(false);
+  const poolRef = useRef<Entry[]>([]);
 
-  const pool = useMemo(
-    () => (customDeck ? customDeck.entries : filterScramblePool(WORDS, difficulty)),
-    [customDeck, difficulty],
-  );
-
-  const loadWord = useCallback(
-    (avoid?: string) => {
-      const n = pool.length;
-      let idx = Math.floor(Math.random() * n);
-      if (avoid && n > 1 && pool[idx].text === avoid) idx = (idx + 1) % n;
-      const entry = pool[idx];
-      setCurrent(entry);
-      setTiles(scrambleWord(entry.text, Math.random));
-      setPickedIds([]);
-      setHintsUsed(0);
-      setStatusMsg(null);
-    },
-    [pool],
-  );
+  const loadWord = useCallback((avoid?: string, overridePool?: Entry[]) => {
+    const list = overridePool ?? poolRef.current;
+    const n = list.length;
+    if (n === 0) return;
+    let idx = Math.floor(Math.random() * n);
+    if (avoid && n > 1 && list[idx].text === avoid) idx = (idx + 1) % n;
+    const entry = list[idx];
+    setCurrent(entry);
+    setTiles(scrambleWord(entry.text, Math.random));
+    setPickedIds([]);
+    setHintsUsed(0);
+    setStatusMsg(null);
+  }, []);
 
   const startRun = useCallback(() => {
-    setScore(0);
-    setCombo(0);
-    setMaxCombo(0);
-    setLives(LIVES);
-    setSolved(0);
-    setPhase("playing");
-    loadWord();
-  }, [loadWord]);
+    const launch = (entries: Entry[]) => {
+      poolRef.current = entries;
+      setScore(0);
+      setCombo(0);
+      setMaxCombo(0);
+      setLives(LIVES);
+      setSolved(0);
+      setPhase("playing");
+      loadWord(undefined, entries);
+    };
+    if (customDeck) {
+      launch(customDeck.entries);
+      return;
+    }
+    void loadWords().then((words) => {
+      launch(filterScramblePool(words, difficulty));
+    });
+  }, [customDeck, difficulty, loadWord]);
 
   useEffect(() => {
     if (didAutostart.current || params.get("autostart") !== "1") return;
@@ -192,7 +197,7 @@ export default function ScrambleGame() {
             ← Kho game
           </Link>
           <div className="hud-brand">
-            <Image src="/icons/scramble.png" alt="" width={30} height={30} className="brand-icon" unoptimized />
+            <Image src="/icons/scramble.webp" alt="" width={30} height={30} className="brand-icon" loading="eager" unoptimized />
             <span>{customDeck ? `Xếp Chữ · ${customDeck.name}` : "Xếp Chữ IELTS"}</span>
           </div>
         </div>
@@ -238,7 +243,7 @@ export default function ScrambleGame() {
           <div className="overlay">
             <div className="card ws-menu-card">
               <div className="menu-hero">
-                <Image src="/icons/scramble.png" alt="" width={62} height={62} className="menu-hero-icon" unoptimized />
+                <Image src="/icons/scramble.webp" alt="" width={62} height={62} className="menu-hero-icon" priority unoptimized />
                 <div>
                   <h1 className="title">
                     Xếp Chữ <span className="accent">IELTS</span>
@@ -352,7 +357,7 @@ export default function ScrambleGame() {
           <div className="overlay">
             <div className="card over-card">
               <div className="over-head">
-                <Image src="/icons/scramble.png" alt="" width={60} height={60} className="over-icon" unoptimized />
+                <Image src="/icons/scramble.webp" alt="" width={60} height={60} className="over-icon" unoptimized />
                 <div className="over-head-info">
                   <h2>Hoàn thành Xếp Chữ!</h2>
                   <p className="final-score">{score.toLocaleString("vi-VN")}</p>

@@ -14,7 +14,7 @@ export const HUB_GAMES: HubGameMeta[] = [
   {
     id: "typing",
     path: "/typing",
-    icon: "/icons/solo.png",
+    icon: "/icons/solo.webp",
     title: "Gõ từ rơi",
     subtitle: "Chơi đơn hoặc Đấu phòng 2–30 người · Boss mỗi 5 map",
     badge: "Vocab · Party",
@@ -23,7 +23,7 @@ export const HUB_GAMES: HubGameMeta[] = [
   {
     id: "reading",
     path: "/reading",
-    icon: "/icons/reading.png",
+    icon: "/icons/reading.webp",
     title: "Reading Sniper",
     subtitle: "Bắt bẫy True / False / Not Given · Highlight dẫn chứng",
     badge: "Reading",
@@ -32,7 +32,7 @@ export const HUB_GAMES: HubGameMeta[] = [
   {
     id: "writing",
     path: "/writing",
-    icon: "/icons/trophy.png",
+    icon: "/icons/trophy.webp",
     title: "Writing Sprint",
     subtitle: "8 biểu đồ Task 1 · 6 dạng luận Task 2",
     badge: "Writing",
@@ -41,7 +41,7 @@ export const HUB_GAMES: HubGameMeta[] = [
   {
     id: "listening",
     path: "/listening",
-    icon: "/icons/listening.png",
+    icon: "/icons/listening.webp",
     title: "Nghe & Gõ",
     subtitle: "Nghe phát âm UK/US & luyện chính tả",
     badge: "Listening",
@@ -50,7 +50,7 @@ export const HUB_GAMES: HubGameMeta[] = [
   {
     id: "blitz",
     path: "/blitz",
-    icon: "/icons/blitz.png",
+    icon: "/icons/blitz.webp",
     title: "Nối Nghĩa Tốc Độ",
     subtitle: "60s phản xạ 4 đáp án · Fever x2 điểm",
     badge: "Speed",
@@ -59,7 +59,7 @@ export const HUB_GAMES: HubGameMeta[] = [
   {
     id: "scramble",
     path: "/scramble",
-    icon: "/icons/scramble.png",
+    icon: "/icons/scramble.webp",
     title: "Xếp Chữ IELTS",
     subtitle: "Ghép chữ cái bị xáo trộn từ nghĩa Việt",
     badge: "Puzzle",
@@ -68,7 +68,7 @@ export const HUB_GAMES: HubGameMeta[] = [
   {
     id: "speaking",
     path: "/speaking",
-    icon: "/icons/speaking.png",
+    icon: "/icons/speaking.webp",
     title: "Phản Xạ Speaking",
     subtitle: "Cụm nói Part 1–3 & Cue Card 45 giây",
     badge: "Speaking",

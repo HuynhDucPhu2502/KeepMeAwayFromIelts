@@ -370,7 +370,7 @@ export default function SpeakingGame() {
             ← Kho game
           </Link>
           <div className="hud-brand">
-            <Image src="/icons/speaking.png" alt="" width={30} height={30} className="brand-icon" unoptimized />
+            <Image src="/icons/speaking.webp" alt="" width={30} height={30} className="brand-icon" loading="eager" unoptimized />
             <span>Phản Xạ Speaking</span>
           </div>
         </div>
@@ -431,7 +431,7 @@ export default function SpeakingGame() {
           <div className="overlay">
             <div className="card ws-menu-card">
               <div className="menu-hero">
-                <Image src="/icons/speaking.png" alt="" width={62} height={62} className="menu-hero-icon" unoptimized />
+                <Image src="/icons/speaking.webp" alt="" width={62} height={62} className="menu-hero-icon" priority unoptimized />
                 <div>
                   <h1 className="title">
                     Phản Xạ <span className="accent">Speaking</span>
@@ -665,7 +665,7 @@ export default function SpeakingGame() {
           <div className="overlay">
             <div className="card over-card">
               <div className="over-head">
-                <Image src="/icons/speaking.png" alt="" width={60} height={60} className="over-icon" unoptimized />
+                <Image src="/icons/speaking.webp" alt="" width={60} height={60} className="over-icon" unoptimized />
                 <div className="over-head-info">
                   <h2>Hoàn thành Speaking!</h2>
                   <p className="final-score">{score.toLocaleString("vi-VN")}</p>

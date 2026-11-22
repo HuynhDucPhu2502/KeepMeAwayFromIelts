@@ -6,14 +6,15 @@
   --panel-solid: #ffffff;
   --line: #e4dccb;
   --text: #1e293b;
-  --muted: #64748b;
-  --accent: #f97316;
-  --accent-dark: #ea580c;
-  --target: #0ea5e9;
-  --danger: #ef4444;
-  --good: #16a34a;
-  --boss: #8b5cf6;
-  --pink: #ec4899;
+  --muted: #475569;
+  --accent: #c2410c;
+  --accent-dark: #9a3412;
+  --target: #0284c7;
+  --target-fill: #0369a1;
+  --danger: #b91c1c;
+  --good: #15803d;
+  --boss: #6d28d9;
+  --pink: #be185d;
   color-scheme: light;
 }
 
@@ -643,9 +644,9 @@ kbd {
 }
 
 .segmented button.selected {
-  background: var(--target);
+  background: var(--target-fill);
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.25);
+  box-shadow: 0 2px 8px rgba(3, 105, 161, 0.25);
 }
 
 .btn {
@@ -679,13 +680,13 @@ kbd {
 }
 
 .btn.primary:hover:not(:disabled) {
-  background: #fb7d24;
-  border-color: var(--accent-dark);
+  background: var(--accent-dark);
+  border-color: #7c2d12;
 }
 
 .btn.primary kbd {
   border-color: rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.22);
   color: #ffffff;
 }
 
@@ -695,7 +696,7 @@ kbd {
 }
 
 .heart-inline {
-  color: #ffe4e6;
+  color: #ffffff;
 }
 
 .btn:focus-visible,

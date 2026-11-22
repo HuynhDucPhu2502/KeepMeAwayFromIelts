@@ -1,11 +1,10 @@
 import { connection } from "next/server";
 import { hostPin, noStore, notFound, pinMatches, readJson, wrongPin } from "@/lib/party/pin";
 
-// GET → { enabled }: whether party mode is switched on (404 when it is not).
+// GET → { enabled }: whether party mode is switched on.
 export async function GET() {
   await connection(); // read the env var per request, not at build time
-  if (!hostPin()) return Response.json({ enabled: false }, { status: 404, headers: noStore });
-  return Response.json({ enabled: true }, { headers: noStore });
+  return Response.json({ enabled: Boolean(hostPin()) }, { headers: noStore });
 }
 
 // POST { pin } → { ok: true } or 401.

@@ -426,7 +426,7 @@
 
 .party-finishing {
   text-align: center;
-  color: var(--target);
+  color: var(--target-fill);
 }
 
 /* Live leaderboard: one row per player, best first (row-major across columns on wide screens). */
@@ -620,7 +620,7 @@
 .btn-danger {
   border-color: #fca5a5;
   background: #fff5f5;
-  color: #dc2626;
+  color: #b91c1c;
 }
 
 .btn-danger:hover:not(:disabled) {

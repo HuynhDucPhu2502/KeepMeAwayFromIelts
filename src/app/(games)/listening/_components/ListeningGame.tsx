@@ -4,11 +4,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { SoundToggle } from "@/components/SoundToggle";
 import { loadCustomDeck, type CustomDeck } from "@/lib/custom-deck";
 import { playError, playGameOver, playSuccess } from "@/lib/sfx";
-import { PHRASES, WORDS } from "@/lib/vocab";
+import { loadVocab } from "@/lib/vocab";
 import { DIFFICULTIES, type Difficulty, type Entry } from "@/lib/typing-engine";
 import { compareSpelling, filterListeningPool, type DiffChar } from "@/lib/arcade-logic";
 
@@ -58,39 +58,44 @@ export default function ListeningGame() {
   const [customDeck] = useState<CustomDeck | null>(() => (params.get("deck") === "custom" ? loadCustomDeck() : null));
   const inputRef = useRef<HTMLInputElement>(null);
   const didAutostart = useRef(false);
-
-  const pool = useMemo(
-    () =>
-      customDeck && customDeck.entries.length > 0
-        ? customDeck.entries
-        : filterListeningPool(WORDS, PHRASES, source, difficulty),
-    [customDeck, source, difficulty],
-  );
+  const poolRef = useRef<Entry[]>([]);
 
   const pickNext = useCallback(
-    (avoid?: string) => {
-      const n = pool.length;
+    (avoid?: string, overridePool?: Entry[]) => {
+      const list = overridePool ?? poolRef.current;
+      const n = list.length;
+      if (n === 0) return;
       let idx = Math.floor(Math.random() * n);
-      if (avoid && n > 1 && pool[idx].text === avoid) idx = (idx + 1) % n;
-      const entry = pool[idx];
+      if (avoid && n > 1 && list[idx].text === avoid) idx = (idx + 1) % n;
+      const entry = list[idx];
       setCurrent(entry);
       setTyped("");
       setResult(null);
       setTtsOk(speakEnglish(entry.text, accent, rate));
       window.setTimeout(() => inputRef.current?.focus(), 40);
     },
-    [pool, accent, rate],
+    [accent, rate],
   );
 
   const startRun = useCallback(() => {
-    setScore(0);
-    setCombo(0);
-    setMaxCombo(0);
-    setLives(LIVES);
-    setCleared(0);
-    setPhase("playing");
-    pickNext();
-  }, [pickNext]);
+    const launch = (entries: Entry[]) => {
+      poolRef.current = entries;
+      setScore(0);
+      setCombo(0);
+      setMaxCombo(0);
+      setLives(LIVES);
+      setCleared(0);
+      setPhase("playing");
+      pickNext(undefined, entries);
+    };
+    if (customDeck && customDeck.entries.length > 0) {
+      launch(customDeck.entries);
+      return;
+    }
+    void loadVocab().then(({ words, phrases }) => {
+      launch(filterListeningPool(words, phrases, source, difficulty));
+    });
+  }, [customDeck, source, difficulty, pickNext]);
 
   useEffect(() => {
     if (didAutostart.current || params.get("autostart") !== "1") return;
@@ -147,7 +152,7 @@ export default function ListeningGame() {
             ← Kho game
           </Link>
           <div className="hud-brand">
-            <Image src="/icons/listening.png" alt="" width={30} height={30} className="brand-icon" unoptimized />
+            <Image src="/icons/listening.webp" alt="" width={30} height={30} className="brand-icon" loading="eager" unoptimized />
             <span>{customDeck ? `Nghe & Gõ · ${customDeck.name}` : "Nghe & Gõ"}</span>
           </div>
         </div>
@@ -193,7 +198,7 @@ export default function ListeningGame() {
           <div className="overlay">
             <div className="card ws-menu-card">
               <div className="menu-hero">
-                <Image src="/icons/listening.png" alt="" width={62} height={62} className="menu-hero-icon" unoptimized />
+                <Image src="/icons/listening.webp" alt="" width={62} height={62} className="menu-hero-icon" priority unoptimized />
                 <div>
                   <h1 className="title">
                     Nghe &amp; <span className="accent">Gõ</span>
@@ -351,7 +356,7 @@ export default function ListeningGame() {
           <div className="overlay">
             <div className="card over-card">
               <div className="over-head">
-                <Image src="/icons/listening.png" alt="" width={60} height={60} className="over-icon" unoptimized />
+                <Image src="/icons/listening.webp" alt="" width={60} height={60} className="over-icon" unoptimized />
                 <div className="over-head-info">
                   <h2>Hoàn thành Nghe &amp; Gõ!</h2>
                   <p className="final-score">{score.toLocaleString("vi-VN")}</p>

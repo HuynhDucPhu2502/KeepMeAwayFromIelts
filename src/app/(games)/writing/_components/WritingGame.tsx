@@ -281,7 +281,7 @@ export default function WritingGame() {
             ← Kho game
           </Link>
           <div className="hud-brand">
-            <Image src="/logo.png" alt="Keep Me Away From IELTS" width={30} height={30} className="brand-icon" unoptimized />
+            <Image src="/icons/logo.webp" alt="Keep Me Away From IELTS" width={30} height={30} className="brand-icon" loading="eager" unoptimized />
             <span>Writing Sprint</span>
           </div>
         </div>
@@ -329,7 +329,7 @@ export default function WritingGame() {
           <div className="overlay">
             <div className="card ws-menu-card">
               <div className="menu-hero">
-                <Image src="/icons/mascot.png" alt="" width={62} height={62} className="menu-hero-icon" unoptimized />
+                <Image src="/icons/mascot.webp" alt="" width={62} height={62} className="menu-hero-icon" priority unoptimized />
                 <div>
                   <h1 className="title">
                     Writing <span className="accent">Sprint</span>
@@ -512,7 +512,7 @@ export default function WritingGame() {
             <div className="card over-card ws-done-card">
               <div className="over-head">
                 <Image
-                  src={newRecord || accuracy >= 80 ? "/icons/trophy.png" : "/icons/mascot.png"}
+                  src={newRecord || accuracy >= 80 ? "/icons/trophy.webp" : "/icons/mascot.webp"}
                   alt=""
                   width={64}
                   height={64}

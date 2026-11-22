@@ -4,12 +4,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { SoundToggle } from "@/components/SoundToggle";
 import { loadCustomDeck, type CustomDeck } from "@/lib/custom-deck";
 import { playError, playFever, playGameOver, playSuccess, playTick } from "@/lib/sfx";
-import { WORDS } from "@/lib/vocab";
-import { DIFFICULTIES, type Difficulty } from "@/lib/typing-engine";
+import { loadWords } from "@/lib/vocab";
+import { DIFFICULTIES, type Difficulty, type Entry } from "@/lib/typing-engine";
 import {
   blitzReward,
   buildBlitzQuestion,
@@ -50,23 +50,29 @@ export default function BlitzGame() {
     return withMeaning.length >= 4 ? { name: d.name, entries: withMeaning } : null;
   });
   const didAutostart = useRef(false);
-
-  const pool = useMemo(
-    () => (customDeck ? customDeck.entries : filterBlitzPool(WORDS, difficulty)),
-    [customDeck, difficulty],
-  );
+  const poolRef = useRef<Entry[]>([]);
 
   const startRun = useCallback(() => {
-    setScore(0);
-    setStreak(0);
-    setMaxStreak(0);
-    setCorrect(0);
-    setTotal(0);
-    setTimeLeft(duration);
-    setFlash(null);
-    setQuestion(buildBlitzQuestion(pool, direction, Math.random));
-    setPhase("playing");
-  }, [duration, pool, direction]);
+    const launch = (entries: Entry[]) => {
+      poolRef.current = entries;
+      setScore(0);
+      setStreak(0);
+      setMaxStreak(0);
+      setCorrect(0);
+      setTotal(0);
+      setTimeLeft(duration);
+      setFlash(null);
+      setQuestion(buildBlitzQuestion(entries, direction, Math.random));
+      setPhase("playing");
+    };
+    if (customDeck) {
+      launch(customDeck.entries);
+      return;
+    }
+    void loadWords().then((words) => {
+      launch(filterBlitzPool(words, difficulty));
+    });
+  }, [duration, customDeck, difficulty, direction]);
 
   useEffect(() => {
     if (didAutostart.current || params.get("autostart") !== "1") return;
@@ -113,10 +119,10 @@ export default function BlitzGame() {
       }
       window.setTimeout(() => {
         setFlash(null);
-        setQuestion((prev) => buildBlitzQuestion(pool, direction, Math.random, prev?.entry.text));
+        setQuestion((prev) => buildBlitzQuestion(poolRef.current, direction, Math.random, prev?.entry.text));
       }, ok ? 240 : 520);
     },
-    [question, flash, phase, streak, maxStreak, pool, direction],
+    [question, flash, phase, streak, maxStreak, direction],
   );
 
   useEffect(() => {
@@ -143,7 +149,7 @@ export default function BlitzGame() {
             ← Kho game
           </Link>
           <div className="hud-brand">
-            <Image src="/icons/blitz.png" alt="" width={30} height={30} className="brand-icon" unoptimized />
+            <Image src="/icons/blitz.webp" alt="" width={30} height={30} className="brand-icon" loading="eager" unoptimized />
             <span>{customDeck ? `Blitz · ${customDeck.name}` : "Nối Nghĩa Tốc Độ"}</span>
           </div>
         </div>
@@ -182,7 +188,7 @@ export default function BlitzGame() {
           <div className="overlay">
             <div className="card ws-menu-card">
               <div className="menu-hero">
-                <Image src="/icons/blitz.png" alt="" width={62} height={62} className="menu-hero-icon" unoptimized />
+                <Image src="/icons/blitz.webp" alt="" width={62} height={62} className="menu-hero-icon" priority unoptimized />
                 <div>
                   <h1 className="title">
                     Nối Nghĩa <span className="accent">Tốc Độ</span>
@@ -286,7 +292,7 @@ export default function BlitzGame() {
           <div className="overlay">
             <div className="card over-card">
               <div className="over-head">
-                <Image src="/icons/blitz.png" alt="" width={60} height={60} className="over-icon" unoptimized />
+                <Image src="/icons/blitz.webp" alt="" width={60} height={60} className="over-icon" unoptimized />
                 <div className="over-head-info">
                   <h2>Hết giờ Blitz!</h2>
                   <p className="final-score">{score.toLocaleString("vi-VN")}</p>

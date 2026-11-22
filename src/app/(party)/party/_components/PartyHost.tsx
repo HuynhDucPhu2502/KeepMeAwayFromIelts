@@ -410,7 +410,7 @@ export default function PartyHost() {
     body = (
       <div className="overlay">
         <form className="card card-small" onSubmit={onPin}>
-          <Image src="/icons/party.png" alt="" width={68} height={68} className="result-hero-icon" unoptimized />
+          <Image src="/icons/party.webp" alt="" width={68} height={68} className="result-hero-icon" priority unoptimized />
           <h1 className="title">
             Party <span className="accent">Host</span>
           </h1>
@@ -523,7 +523,7 @@ export default function PartyHost() {
             ← Kho game
           </Link>
           <div className="hud-brand">
-            <Image src="/logo.png" alt="Keep Me Away From IELTS" width={32} height={32} className="brand-icon" unoptimized />
+            <Image src="/icons/logo.webp" alt="Keep Me Away From IELTS" width={32} height={32} className="brand-icon" loading="eager" unoptimized />
             <span>
               KEEP ME AWAY FROM <span className="accent">IELTS</span> · PARTY
             </span>
@@ -746,7 +746,7 @@ function HostResults({ room, busy, onLobby }: { room: Room; busy: boolean; onLob
   const winner = ranking[0] ? room.players[ranking[0]] : undefined;
   return (
     <div className="party-results">
-      {winner && <Image src="/icons/trophy.png" alt="" width={78} height={78} className="result-hero-icon" unoptimized />}
+      {winner && <Image src="/icons/trophy.webp" alt="" width={78} height={78} className="result-hero-icon" unoptimized />}
       <h2 className="party-winner">{winner ? `${winner.name} thắng!` : "Vòng kết thúc"}</h2>
       <ol className="party-cards">
         {ranking.slice(0, 3).map((uid, i) => {

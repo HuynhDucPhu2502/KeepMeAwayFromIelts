@@ -115,7 +115,7 @@ export default function DeckBuilder() {
             ← Kho game
           </Link>
           <div className="hud-brand">
-            <Image src="/logo.png" alt="Keep Me Away From IELTS" width={30} height={30} className="brand-icon" unoptimized />
+            <Image src="/icons/logo.webp" alt="Keep Me Away From IELTS" width={30} height={30} className="brand-icon" loading="eager" unoptimized />
             <span>Bộ từ riêng &amp; Chia sẻ</span>
           </div>
         </div>
@@ -241,7 +241,7 @@ export default function DeckBuilder() {
                   disabled={entries.length === 0}
                   onClick={() => onLaunchGame("/typing")}
                 >
-                  <Image src="/icons/solo.png" alt="" width={34} height={34} unoptimized />
+                  <Image src="/icons/solo.webp" alt="" width={34} height={34} unoptimized />
                   <div>
                     <strong>Gõ từ rơi</strong>
                     <span>Luyện phản xạ gõ nhanh</span>
@@ -254,7 +254,7 @@ export default function DeckBuilder() {
                   disabled={entries.length === 0}
                   onClick={() => onLaunchGame("/listening")}
                 >
-                  <Image src="/icons/listening.png" alt="" width={34} height={34} unoptimized />
+                  <Image src="/icons/listening.webp" alt="" width={34} height={34} unoptimized />
                   <div>
                     <strong>Nghe &amp; Gõ</strong>
                     <span>Nghe phát âm UK/US &amp; viết chính tả</span>
@@ -267,7 +267,7 @@ export default function DeckBuilder() {
                   disabled={meaningCount < 4}
                   onClick={() => onLaunchGame("/blitz")}
                 >
-                  <Image src="/icons/blitz.png" alt="" width={34} height={34} unoptimized />
+                  <Image src="/icons/blitz.webp" alt="" width={34} height={34} unoptimized />
                   <div>
                     <strong>Nối Nghĩa Tốc Độ</strong>
                     <span>
@@ -282,7 +282,7 @@ export default function DeckBuilder() {
                   disabled={scrambleEligible === 0}
                   onClick={() => onLaunchGame("/scramble")}
                 >
-                  <Image src="/icons/scramble.png" alt="" width={34} height={34} unoptimized />
+                  <Image src="/icons/scramble.webp" alt="" width={34} height={34} unoptimized />
                   <div>
                     <strong>Xếp Chữ IELTS</strong>
                     <span>

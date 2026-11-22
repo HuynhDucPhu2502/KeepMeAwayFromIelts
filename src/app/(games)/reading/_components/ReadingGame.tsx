@@ -194,7 +194,7 @@ export default function ReadingGame() {
             ← Kho game
           </Link>
           <div className="hud-brand">
-            <Image src="/icons/reading.png" alt="" width={30} height={30} className="brand-icon" unoptimized />
+            <Image src="/icons/reading.webp" alt="" width={30} height={30} className="brand-icon" loading="eager" unoptimized />
             <span>Reading Sniper</span>
           </div>
         </div>
@@ -249,7 +249,7 @@ export default function ReadingGame() {
           <div className="overlay">
             <div className="card ws-menu-card">
               <div className="menu-hero">
-                <Image src="/icons/reading.png" alt="" width={62} height={62} className="menu-hero-icon" unoptimized />
+                <Image src="/icons/reading.webp" alt="" width={62} height={62} className="menu-hero-icon" priority unoptimized />
                 <div>
                   <h1 className="title">
                     Reading <span className="accent">Sniper</span>
@@ -412,7 +412,7 @@ export default function ReadingGame() {
             <div className="card over-card">
               <div className="over-head">
                 <Image
-                  src={newRecord || accuracy >= 80 ? "/icons/trophy.png" : "/icons/reading.png"}
+                  src={newRecord || accuracy >= 80 ? "/icons/trophy.webp" : "/icons/reading.webp"}
                   alt=""
                   width={60}
                   height={60}

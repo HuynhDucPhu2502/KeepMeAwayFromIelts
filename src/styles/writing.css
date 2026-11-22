@@ -344,16 +344,16 @@
   padding: 2px 6px;
   border-radius: 6px;
   background: #fee2e2;
-  color: #dc2626;
+  color: #b91c1c;
   font-weight: 700;
-  text-decoration: underline wavy #ef4444;
+  text-decoration: underline wavy #dc2626;
 }
 
 .ws-blank-token {
   padding: 2px 8px;
   border-radius: 6px;
   background: #e0f2fe;
-  color: #0284c7;
+  color: #0369a1;
   font-family: var(--font-mono-ui), monospace;
   font-weight: 700;
 }
@@ -481,7 +481,7 @@
 }
 
 .ws-order-tile.picked .ws-order-num {
-  background: var(--target);
+  background: var(--target-fill);
   color: #ffffff;
 }
 

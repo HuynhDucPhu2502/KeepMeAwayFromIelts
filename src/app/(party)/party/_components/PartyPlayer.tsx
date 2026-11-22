@@ -6,8 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useReducer, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
-import QRCode from "qrcode";
-import { PHRASES, WORDS } from "@/lib/vocab";
+import { loadVocab, type VocabData } from "@/lib/vocab";
 import {
   DIFFICULTIES,
   LIVES,
@@ -159,6 +158,7 @@ export default function PartyPlayer() {
   const hiddenAt = useRef<number | null>(null);
   const endingRound = useRef<number | null>(null);
   const syncedSettingsFor = useRef<string | null>(null);
+  const vocabRef = useRef<VocabData | null>(null);
 
   useEffect(() => {
     engineRef.current = engine;
@@ -260,6 +260,9 @@ export default function PartyPlayer() {
 
   useEffect(() => {
     if (!session) return;
+    void loadVocab().then((data) => {
+      vocabRef.current = data;
+    });
     return subscribeRoom(session.code, (next) => {
       roomRef.current = next;
       if (next && syncedSettingsFor.current !== session.code) {
@@ -273,14 +276,25 @@ export default function PartyPlayer() {
 
   useEffect(() => {
     if (!isHost || !session) return;
-    QRCode.toString(`${window.location.origin}/party?room=${session.code}`, {
-      type: "svg",
-      margin: 1,
-      errorCorrectionLevel: "M",
-      color: { dark: "#1e293b", light: "#ffffff" },
-    })
-      .then(setQr)
-      .catch(() => setQr(""));
+    let active = true;
+    void import("qrcode")
+      .then((mod) =>
+        mod.default.toString(`${window.location.origin}/party?room=${session.code}`, {
+          type: "svg",
+          margin: 1,
+          errorCorrectionLevel: "M",
+          color: { dark: "#1e293b", light: "#ffffff" },
+        }),
+      )
+      .then((svg) => {
+        if (active) setQr(svg);
+      })
+      .catch(() => {
+        if (active) setQr("");
+      });
+    return () => {
+      active = false;
+    };
   }, [isHost, session]);
 
   useEffect(() => {
@@ -422,12 +436,19 @@ export default function PartyPlayer() {
       }
 
       if (ctl.startedRound !== r.round && t >= r.startAt && (r.endsAt === 0 || t < r.endsAt)) {
+        const vocab = vocabRef.current;
+        if (!vocab) {
+          void loadVocab().then((data) => {
+            vocabRef.current = data;
+          });
+          return;
+        }
         ps.sig = "";
         ps.eliminatedAt = null;
         const { mode, difficulty } = r.settings;
         dispatch({
           type: "start",
-          pool: partyPool(mode, difficulty, WORDS, PHRASES),
+          pool: partyPool(mode, difficulty, vocab.words, vocab.phrases),
           best: 0,
           mode,
           difficulty,
@@ -510,6 +531,7 @@ export default function PartyPlayer() {
 
   const onJoinOrCreate = (event: FormEvent) => {
     event.preventDefault();
+    if (availability !== "on") return;
     const name = nameInput.replace(/\s+/g, " ").trim();
     if (!name) return setJoinError("Nhập tên của bạn nhé.");
     if (entryTab === "create") {
@@ -619,7 +641,7 @@ export default function PartyPlayer() {
   const myRank = room && session ? rankPlayers(room, now).indexOf(session.uid) + 1 : 0;
 
   let overlay: ReactNode = null;
-  if (availability !== "on") overlay = <AvailabilityNotice availability={availability} />;
+  if (availability === "off" || availability === "error") overlay = <AvailabilityNotice availability={availability} />;
   else if (!session)
     overlay = (
       <JoinForm
@@ -718,7 +740,7 @@ export default function PartyPlayer() {
             ← Kho game
           </Link>
           <div className="hud-brand">
-            <Image src="/logo.png" alt="Keep Me Away From IELTS" width={30} height={30} className="brand-icon" unoptimized />
+            <Image src="/icons/logo.webp" alt="Keep Me Away From IELTS" width={30} height={30} className="brand-icon" loading="eager" unoptimized />
             <span>Party Mode</span>
           </div>
         </div>
@@ -831,7 +853,7 @@ function JoinForm(props: {
     <div className="overlay">
       <form className="card party-join" onSubmit={props.onSubmit}>
         <div className="menu-hero">
-          <Image src="/icons/party.png" alt="" width={58} height={58} className="menu-hero-icon" unoptimized />
+          <Image src="/icons/party.webp" alt="" width={58} height={58} className="menu-hero-icon" priority unoptimized />
           <h1 className="title">
             Keep Me Away From <span className="accent">IELTS</span> · Party
           </h1>
@@ -1116,7 +1138,7 @@ function Ended(props: {
   return (
     <Notice title={rank === 1 ? "Bạn thắng rồi! 🏆" : rank > 0 ? `Bạn hạng ${rank}/${ranking.length}` : "Vòng vừa kết thúc"}>
       {rank === 1 && (
-        <Image src="/icons/trophy.png" alt="" width={72} height={72} className="result-hero-icon" unoptimized />
+        <Image src="/icons/trophy.webp" alt="" width={72} height={72} className="result-hero-icon" unoptimized />
       )}
       {rank > 0 && me && <p className="final-score">{me.score.toLocaleString("vi-VN")}</p>}
       {card && (
