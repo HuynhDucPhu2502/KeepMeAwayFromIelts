@@ -20,7 +20,7 @@ const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.tri
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — Kho 7 Mini-Game Học IELTS Miễn Phí (Đủ 4 Kỹ Năng)`,
+    default: `${SITE_NAME} — Kho 8 Mini-Game Học IELTS Miễn Phí (Đủ 4 Kỹ Năng)`,
     template: `%s · ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
@@ -48,20 +48,20 @@ export const metadata: Metadata = {
     locale: "vi_VN",
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: `${SITE_NAME} — Kho 7 Mini-Game Học IELTS Miễn Phí`,
+    title: `${SITE_NAME} — Kho 8 Mini-Game Học IELTS Miễn Phí`,
     description: SITE_DESCRIPTION,
     images: [
       {
         url: "/og-banner.png",
         width: 1200,
         height: 630,
-        alt: `${SITE_NAME} — Kho 7 mini-game học IELTS miễn phí đủ 4 kỹ năng`,
+        alt: `${SITE_NAME} — Kho 8 mini-game học IELTS miễn phí đủ 4 kỹ năng`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} — Kho 7 Mini-Game Học IELTS Miễn Phí`,
+    title: `${SITE_NAME} — Kho 8 Mini-Game Học IELTS Miễn Phí`,
     description: SITE_DESCRIPTION,
     images: ["/og-banner.png"],
   },
@@ -117,6 +117,7 @@ const JSON_LD_GRAPH = {
         "Đấu phòng Party Battle Royale 2–30 người",
         "Reading Sniper: 24 bài True / False / Not Given kèm highlight dẫn chứng",
         "Writing Sprint: 8 dạng biểu đồ Task 1 & 6 dạng luận Task 2",
+        "Paraphrase Lab: tự gõ nâng cấp câu Band 5 → Band 8, bắt lỗi ngữ pháp & dựng câu phức",
         "Nghe & Gõ chính tả giọng UK/US",
         "Nối Nghĩa Tốc Độ 60s Fever Mode",
         "Xếp Chữ IELTS & Phản Xạ Speaking Part 1–3 có Micro tự chấm từ khóa",

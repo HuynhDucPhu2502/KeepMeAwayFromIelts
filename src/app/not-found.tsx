@@ -11,7 +11,7 @@ export default function NotFound() {
         <p className="muted">Có vẻ bạn vừa chạy trốn hơi xa khỏi kho đề IELTS rồi đấy. Quay về sảnh chọn game chơi tiếp nhé!</p>
         <div className="actions">
           <Link href="/" className="btn primary">
-            ← Về kho 7 game
+            ← Về kho 8 game
           </Link>
         </div>
       </div>

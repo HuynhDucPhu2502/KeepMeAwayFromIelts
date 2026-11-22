@@ -565,3 +565,183 @@
   }
 }
 
+/* ---------------------------------------------------------------- */
+/* Game #8: Paraphrase Lab (/writing-lab)                           */
+/* ---------------------------------------------------------------- */
+.wl-compare {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wl-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+}
+
+.wl-box p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.wl-box-basic {
+  background: #faf6ee;
+}
+
+.wl-box-target {
+  background: #f0f9ff;
+  border-color: #7dd3fc;
+}
+
+.wl-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.wl-box-target .wl-label {
+  color: var(--target-fill);
+}
+
+.wl-type-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wl-type-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.wl-segments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: #fcfaf5;
+}
+
+.wl-seg {
+  padding: 7px 11px;
+  border: 1.5px solid #d6cbb8;
+  border-bottom-width: 3px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--text);
+  font: inherit;
+  font-size: 15.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, transform 0.08s;
+}
+
+.wl-seg:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: #fff7ed;
+  transform: translateY(-1px);
+}
+
+.wl-seg.found {
+  border-color: var(--danger);
+  background: #fef2f2;
+  color: var(--danger);
+  text-decoration: underline wavy var(--danger);
+}
+
+.wl-seg.miss {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+  color: var(--muted);
+}
+
+.wl-seg:disabled {
+  cursor: default;
+}
+
+.wl-build-zone {
+  min-height: 76px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 14px;
+  border: 2px dashed #94a3b8;
+  border-radius: 14px;
+  background: #faf6ee;
+}
+
+.wl-picked-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border: 2px solid var(--target);
+  border-radius: 10px;
+  background: #f0f9ff;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wl-chip-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--target-fill);
+  color: #ffffff;
+  font-family: var(--font-mono-ui), monospace;
+  font-size: 11.5px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wl-tile-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wl-tile {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 2px solid var(--line);
+  border-bottom-width: 3px;
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, transform 0.08s;
+}
+
+.wl-tile:hover:not(:disabled) {
+  border-color: var(--target);
+  background: #f0f9ff;
+  transform: translateY(-1px);
+}
+
+.wl-tile.used {
+  opacity: 0.3;
+  cursor: default;
+}
+

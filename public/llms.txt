@@ -1,6 +1,6 @@
 # Keep Me Away From IELTS
 
-> Free interactive Vietnamese/English IELTS practice web app with 7 mini-games covering all 4 IELTS skills (Listening, Reading, Writing, Speaking), academic vocabulary, Custom Word Decks shareable by URL, and 30-player Party Battle Royale mode.
+> Free interactive Vietnamese/English IELTS practice web app with 8 mini-games covering all 4 IELTS skills (Listening, Reading, Writing, Speaking), academic vocabulary, Custom Word Decks shareable by URL, and 30-player Party Battle Royale mode.
 
 - Website: https://keepmeawayfromielts.vnftgroup.com
 - Languages: Vietnamese (`vi`), English (`en`)
@@ -8,10 +8,11 @@
 
 ## Mini-Games & Tools
 
-- [Game Hub](https://keepmeawayfromielts.vnftgroup.com/): Choose any of the 7 IELTS mini-games and customize difficulty, accent, or round length.
+- [Game Hub](https://keepmeawayfromielts.vnftgroup.com/): Full-width launcher for all 8 IELTS mini-games, Party mode, and Custom Word Decks.
 - [Gõ Từ Rơi IELTS](https://keepmeawayfromielts.vnftgroup.com/typing): Falling-word typing game with 5,785 high-frequency IELTS words, 307 Reading/Listening phrases, boss waves every 5 maps, and heart recovery.
 - [Reading Sniper (True / False / Not Given)](https://keepmeawayfromielts.vnftgroup.com/reading): 24 authentic IELTS Academic reading passages with classic exam traps, inline evidence highlighting, and Band 5.0–9.0 estimation.
 - [Writing Sprint (Task 1 & Task 2)](https://keepmeawayfromielts.vnftgroup.com/writing): Interactive Task 1 chart analysis (8 real SVG chart types), Band 8 collocation cloze, and Task 2 paragraph coherence puzzles.
+- [Paraphrase Lab (Band 8 Sentence Lab)](https://keepmeawayfromielts.vnftgroup.com/writing-lab): Hands-on IELTS Writing practice with typed Band 5→8 paraphrasing, interactive grammar/tone error spotting, and complex sentence building (Overview & Thesis).
 - [Nghe & Gõ (Listening Dictation)](https://keepmeawayfromielts.vnftgroup.com/listening): UK/US Web Speech API IELTS vocabulary dictation with character-by-character spelling diff.
 - [Nối Nghĩa Tốc Độ (Vocab Blitz)](https://keepmeawayfromielts.vnftgroup.com/blitz): 30s/60s/90s 4-option vocabulary speed quiz with Fever Mode x2 points and time bonuses.
 - [Xếp Chữ IELTS (Word Scramble)](https://keepmeawayfromielts.vnftgroup.com/scramble): Unscramble IELTS vocabulary from Vietnamese meanings with keyboard and hint support.
