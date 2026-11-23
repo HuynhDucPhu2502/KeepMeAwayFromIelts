@@ -50,7 +50,7 @@ export function jsonLdBreadcrumbList(
   };
 }
 
-/** Emits BreadcrumbList + LearningResource JSON-LD for each mini-game page. */
+/** Emits LearningResource JSON-LD for each mini-game page. */
 export function GameJsonLd({
   name,
   description,
@@ -61,23 +61,6 @@ export function GameJsonLd({
   const graph = {
     "@context": "https://schema.org",
     "@graph": [
-      {
-        "@type": "BreadcrumbList",
-        itemListElement: [
-          {
-            "@type": "ListItem",
-            position: 1,
-            name: SITE_NAME,
-            item: SITE_URL,
-          },
-          {
-            "@type": "ListItem",
-            position: 2,
-            name,
-            item: url,
-          },
-        ],
-      },
       {
         "@type": "LearningResource",
         name: `${name} — ${SITE_NAME}`,

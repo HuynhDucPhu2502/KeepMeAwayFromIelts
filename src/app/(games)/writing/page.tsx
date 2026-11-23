@@ -1,7 +1,16 @@
 import { Suspense } from "react";
-import { GameJsonLd } from "@/app/_components/JsonLd";
-import { pageMetadata } from "@/lib/seo";
+import { GameJsonLd, JsonLdScript, jsonLdBreadcrumbList } from "@/app/_components/JsonLd";
+import { findHubGameById } from "@/lib/games-registry";
+import { pageMetadata, SITE_NAME } from "@/lib/seo";
 import WritingGame from "./_components/WritingGame";
+
+const game = findHubGameById("writing");
+if (!game) throw new Error('Missing "writing" game registry entry');
+
+const breadcrumb = jsonLdBreadcrumbList([
+  { name: SITE_NAME, href: "" },
+  { name: game.title, href: game.path },
+]);
 
 export const metadata = pageMetadata({
   title: "Writing Sprint",
@@ -20,6 +29,7 @@ export const metadata = pageMetadata({
 export default function WritingPage() {
   return (
     <>
+      <JsonLdScript data={breadcrumb} />
       <GameJsonLd
         name="Writing Sprint · Task 1 & 2"
         description="Game luyện IELTS Writing miễn phí: soi 8 dạng biểu đồ Task 1, điền collocation Band 8 và xếp mạch đoạn văn Task 2."
