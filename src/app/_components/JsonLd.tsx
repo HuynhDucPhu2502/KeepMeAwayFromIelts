@@ -1,4 +1,5 @@
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import type { BreadcrumbList, WithContext } from "schema-dts";
 
 interface GameJsonLdProps {
   name: string;
@@ -7,8 +8,55 @@ interface GameJsonLdProps {
   skill: string;
 }
 
+export function absoluteUrl(path: string) {
+  return `${SITE_URL}${path}`;
+}
+
+export type BreadcrumbItem = {
+  name: string;
+  href: string;
+};
+
+export function JsonLdScript({
+  data,
+  async = false,
+}: {
+  data: unknown;
+  async?: boolean;
+}) {
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(data).replace(/</g, "\\u003c"),
+      }}
+      async={async}
+    />
+  );
+}
+
+export function jsonLdBreadcrumbList(
+  items: BreadcrumbItem[],
+): WithContext<BreadcrumbList> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      item: absoluteUrl(item.href),
+    })),
+  };
+}
+
 /** Emits BreadcrumbList + LearningResource JSON-LD for each mini-game page. */
-export function GameJsonLd({ name, description, path, skill }: GameJsonLdProps) {
+export function GameJsonLd({
+  name,
+  description,
+  path,
+  skill,
+}: GameJsonLdProps) {
   const url = `${SITE_URL}${path}`;
   const graph = {
     "@context": "https://schema.org",
@@ -51,5 +99,5 @@ export function GameJsonLd({ name, description, path, skill }: GameJsonLdProps) 
     ],
   };
 
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(graph) }} />;
+  return <JsonLdScript data={graph} />;
 }

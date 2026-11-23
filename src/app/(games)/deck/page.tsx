@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { GameJsonLd } from "@/components/GameJsonLd";
+import { GameJsonLd } from "@/app/_components/JsonLd";
 import { pageMetadata } from "@/lib/seo";
 import DeckBuilder from "./_components/DeckBuilder";
 

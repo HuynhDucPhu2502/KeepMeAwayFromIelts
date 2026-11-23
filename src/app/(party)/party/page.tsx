@@ -1,6 +1,6 @@
 import type { Viewport } from "next";
 import { Suspense } from "react";
-import { GameJsonLd } from "@/components/GameJsonLd";
+import { GameJsonLd } from "@/app/_components/JsonLd";
 import { pageMetadata } from "@/lib/seo";
 import PartyPlayer from "./_components/PartyPlayer";
 

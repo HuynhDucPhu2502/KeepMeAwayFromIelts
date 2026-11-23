@@ -120,3 +120,5 @@ export const VOCAB_COUNTS = {
   words: 5785,
   phrases: 307,
 } as const;
+
+export const findHubGameById = (id: HubGameId) => HUB_GAMES.find((g) => g.id === id);
