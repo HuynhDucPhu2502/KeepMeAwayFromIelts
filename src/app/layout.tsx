@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Be_Vietnam_Pro, Geist_Mono } from "next/font/google";
+import { JsonLdScript } from "@/app/_components/JsonLd";
 import { HUB_GAMES } from "@/lib/games-registry";
 import { DEFAULT_KEYWORDS, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo";
 import "./globals.css";
@@ -157,10 +158,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="vi" className={`${sans.variable} ${mono.variable} h-full antialiased`}>
       <body className="min-h-full">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD_GRAPH) }}
-        />
+        <JsonLdScript data={JSON_LD_GRAPH} />
         {children}
       </body>
     </html>

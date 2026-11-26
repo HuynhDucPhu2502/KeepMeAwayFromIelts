@@ -1,7 +1,12 @@
 import { Suspense } from "react";
-import { GameJsonLd } from "@/components/GameJsonLd";
-import { pageMetadata } from "@/lib/seo";
+import { GameJsonLd, JsonLdScript, jsonLdBreadcrumbList } from "@/app/_components/JsonLd";
+import { pageMetadata, SITE_NAME } from "@/lib/seo";
 import DeckBuilder from "./_components/DeckBuilder";
+
+const breadcrumb = jsonLdBreadcrumbList([
+  { name: SITE_NAME, href: "" },
+  { name: "Bộ Từ Riêng · Chia Sẻ Bằng Link", href: "/deck" },
+]);
 
 export const metadata = pageMetadata({
   title: "Bộ Từ Riêng · Chia Sẻ Bằng Link",
@@ -19,6 +24,7 @@ export const metadata = pageMetadata({
 export default function DeckPage() {
   return (
     <>
+      <JsonLdScript data={breadcrumb} />
       <GameJsonLd
         name="Bộ Từ Riêng · Chia Sẻ Bằng Link"
         description="Tự dán danh sách từ vựng tiếng Anh của bạn hoặc giáo viên, chơi ngay trên 4 mini-game IELTS và chia sẻ qua 1 đường link."

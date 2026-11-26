@@ -1,7 +1,16 @@
 import { Suspense } from "react";
-import { GameJsonLd } from "@/components/GameJsonLd";
-import { pageMetadata } from "@/lib/seo";
+import { GameJsonLd, JsonLdScript, jsonLdBreadcrumbList } from "@/app/_components/JsonLd";
+import { findHubGameById } from "@/lib/games-registry";
+import { pageMetadata, SITE_NAME } from "@/lib/seo";
 import TypingGame from "./_components/TypingGame";
+
+const game = findHubGameById("typing");
+if (!game) throw new Error('Missing "typing" game registry entry');
+
+const breadcrumb = jsonLdBreadcrumbList([
+  { name: SITE_NAME, href: "" },
+  { name: game.title, href: game.path },
+]);
 
 export const metadata = pageMetadata({
   title: "Gõ Từ Rơi IELTS",
@@ -19,6 +28,7 @@ export const metadata = pageMetadata({
 export default function TypingPage() {
   return (
     <>
+      <JsonLdScript data={breadcrumb} />
       <GameJsonLd
         name="Gõ Từ Rơi IELTS"
         description="Game gõ từ vựng & cụm từ IELTS rơi miễn phí: 5.785 từ học thuật, 307 cụm Reading/Listening, Boss mỗi 5 map và hồi máu."

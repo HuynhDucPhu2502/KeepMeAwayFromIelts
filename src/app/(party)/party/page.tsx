@@ -1,8 +1,13 @@
 import type { Viewport } from "next";
 import { Suspense } from "react";
-import { GameJsonLd } from "@/components/GameJsonLd";
-import { pageMetadata } from "@/lib/seo";
+import { GameJsonLd, JsonLdScript, jsonLdBreadcrumbList } from "@/app/_components/JsonLd";
+import { pageMetadata, SITE_NAME } from "@/lib/seo";
 import PartyPlayer from "./_components/PartyPlayer";
+
+const breadcrumb = jsonLdBreadcrumbList([
+  { name: SITE_NAME, href: "" },
+  { name: "Đấu Phòng Party · IELTS Typing Battle Royale", href: "/party" },
+]);
 
 export const metadata = pageMetadata({
   title: "Đấu Phòng Party",
@@ -27,6 +32,7 @@ export const viewport: Viewport = {
 export default function PartyPage() {
   return (
     <>
+      <JsonLdScript data={breadcrumb} />
       <GameJsonLd
         name="Đấu Phòng Party · IELTS Typing Battle Royale"
         description="Chế độ đấu phòng gõ từ vựng IELTS 2–30 người cùng lúc bằng mã 4 ký tự hoặc QR."

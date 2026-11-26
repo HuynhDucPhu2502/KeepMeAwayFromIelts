@@ -1,7 +1,16 @@
 import { Suspense } from "react";
-import { GameJsonLd } from "@/components/GameJsonLd";
-import { pageMetadata } from "@/lib/seo";
+import { GameJsonLd, JsonLdScript, jsonLdBreadcrumbList } from "@/app/_components/JsonLd";
+import { findHubGameById } from "@/lib/games-registry";
+import { pageMetadata, SITE_NAME } from "@/lib/seo";
 import ReadingGame from "./_components/ReadingGame";
+
+const game = findHubGameById("reading");
+if (!game) throw new Error('Missing "reading" game registry entry');
+
+const breadcrumb = jsonLdBreadcrumbList([
+  { name: SITE_NAME, href: "" },
+  { name: game.title, href: game.path },
+]);
 
 export const metadata = pageMetadata({
   title: "Reading Sniper · True / False / Not Given",
@@ -19,6 +28,7 @@ export const metadata = pageMetadata({
 export default function ReadingPage() {
   return (
     <>
+      <JsonLdScript data={breadcrumb} />
       <GameJsonLd
         name="Reading Sniper · True / False / Not Given"
         description="Game luyện IELTS Reading True / False / Not Given miễn phí với 24 đoạn văn học thuật bẫy kinh điển và highlight câu dẫn chứng."

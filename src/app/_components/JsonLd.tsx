@@ -1,0 +1,86 @@
+import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import type { BreadcrumbList, WithContext } from "schema-dts";
+
+interface GameJsonLdProps {
+  name: string;
+  description: string;
+  path: string;
+  skill: string;
+}
+
+export function absoluteUrl(path: string) {
+  return `${SITE_URL}${path}`;
+}
+
+export type BreadcrumbItem = {
+  name: string;
+  href: string;
+};
+
+export function JsonLdScript({
+  data,
+  async = false,
+}: {
+  data: unknown;
+  async?: boolean;
+}) {
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(data).replace(/</g, "\\u003c"),
+      }}
+      async={async}
+    />
+  );
+}
+
+export function jsonLdBreadcrumbList(
+  items: BreadcrumbItem[],
+): WithContext<BreadcrumbList> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      item: absoluteUrl(item.href),
+    })),
+  };
+}
+
+/** Emits LearningResource JSON-LD for each mini-game page. */
+export function GameJsonLd({
+  name,
+  description,
+  path,
+  skill,
+}: GameJsonLdProps) {
+  const url = `${SITE_URL}${path}`;
+  const graph = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "LearningResource",
+        name: `${name} — ${SITE_NAME}`,
+        description,
+        url,
+        inLanguage: ["vi", "en"],
+        isAccessibleForFree: true,
+        educationalUse: "practice",
+        learningResourceType: "Interactive Game",
+        educationalLevel: "IELTS Band 5.0 - 9.0",
+        teaches: skill,
+        image: `${SITE_URL}/og-banner.png`,
+        provider: {
+          "@type": "Organization",
+          name: SITE_NAME,
+          url: SITE_URL,
+        },
+      },
+    ],
+  };
+
+  return <JsonLdScript data={graph} />;
+}

@@ -1,7 +1,16 @@
 import { Suspense } from "react";
-import { GameJsonLd } from "@/components/GameJsonLd";
-import { pageMetadata } from "@/lib/seo";
+import { GameJsonLd, JsonLdScript, jsonLdBreadcrumbList } from "@/app/_components/JsonLd";
+import { findHubGameById } from "@/lib/games-registry";
+import { pageMetadata, SITE_NAME } from "@/lib/seo";
 import SpeakingGame from "./_components/SpeakingGame";
+
+const game = findHubGameById("speaking");
+if (!game) throw new Error('Missing "speaking" game registry entry');
+
+const breadcrumb = jsonLdBreadcrumbList([
+  { name: SITE_NAME, href: "" },
+  { name: game.title, href: game.path },
+]);
 
 export const metadata = pageMetadata({
   title: "Phản Xạ Speaking",
@@ -19,6 +28,7 @@ export const metadata = pageMetadata({
 export default function SpeakingPage() {
   return (
     <>
+      <JsonLdScript data={breadcrumb} />
       <GameJsonLd
         name="Phản Xạ Speaking · Part 1–3 & Cue Card Micro"
         description="Luyện cụm từ nói tự nhiên IELTS Speaking Part 1–3 và thử thách Cue Card 45 giây có Micro tự động chấm từ khóa Band 8."
